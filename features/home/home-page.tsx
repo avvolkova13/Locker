@@ -166,7 +166,6 @@ function Faq() {
   return (
     <section className={styles.faqSection} id="faq" aria-labelledby="faq-title">
       <div className={styles.faqHeader}>
-        <span>Вопросы</span>
         <h2 id="faq-title">Остались вопросы?</h2>
       </div>
       <div className={styles.faqList}>
