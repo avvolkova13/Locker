@@ -16,3 +16,7 @@ export const APP_ROUTES = {
 } as const;
 
 export type AppRouteKey = keyof typeof APP_ROUTES;
+
+export function getProductRoute(productId: string) {
+  return `/product/${productId}`;
+}

@@ -1,0 +1,314 @@
+.button {
+  --button-height: 54px;
+  --button-x: 44px;
+  --button-font-size: 13px;
+  --button-letter-spacing: 0.12em;
+  --button-bg: rgb(0 0 0 / 0.1);
+  --button-text: #050505;
+  --button-hover-text: #ffffff;
+  --button-quad: cubic-bezier(0.45, 0, 0.55, 1);
+  --button-quint-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --button-quint-in: cubic-bezier(0.64, 0, 0.78, 0);
+  position: relative;
+  display: inline-block;
+  flex: none;
+  min-width: 0;
+  height: var(--button-height);
+  border: 0;
+  border-radius: 19px;
+  padding: 0;
+  appearance: none;
+  background: var(--button-bg);
+  color: var(--button-text);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--button-font-size);
+  font-weight: 500;
+  letter-spacing: var(--button-letter-spacing);
+  line-height: 1;
+  text-transform: uppercase;
+  transition: color 600ms var(--button-quad);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.button[data-size="compact"] {
+  --button-height: 40px;
+  --button-x: 24px;
+  --button-font-size: 10.5px;
+  --button-letter-spacing: 0.1em;
+  border-radius: 15px;
+}
+
+.button[data-variant="ghost"] {
+  --button-bg: rgb(0 0 0 / 0.1);
+}
+
+.frame {
+  position: relative;
+  display: block;
+  height: var(--button-height);
+  min-width: 0;
+}
+
+.chrome {
+  position: absolute;
+  top: -16px;
+  left: -16px;
+  z-index: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  height: var(--button-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.58rem;
+  overflow: visible;
+  padding: 0 var(--button-x);
+}
+
+.labelTrack {
+  position: relative;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  height: 1em;
+  padding-left: var(--button-letter-spacing);
+}
+
+.labelMain,
+.labelClone {
+  display: block;
+  transition:
+    opacity 600ms var(--button-quad),
+    transform 600ms var(--button-quad);
+}
+
+.labelClone {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  color: var(--button-hover-text);
+  opacity: 0;
+}
+
+.hoverEffect,
+.hoverBorder,
+.echoBorderLarge,
+.echoBorderSmall {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.hoverEffect,
+.hoverBorder {
+  transition: opacity 600ms var(--button-quad);
+}
+
+.hoverBorderEffect {
+  opacity: 0;
+  stroke-dasharray: 0 100;
+  stroke-dashoffset: 0.001;
+}
+
+.echoBorderLarge {
+  transform: scale(0.7778);
+}
+
+.echoBorderSmall {
+  transform: scale(0.875);
+}
+
+.loader {
+  position: relative;
+  z-index: 1;
+  width: 0.82em;
+  height: 0.82em;
+  border: 1px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 999px;
+  animation: lockerButtonSpin 820ms linear infinite;
+}
+
+.button:hover,
+.button:focus-visible {
+  color: var(--button-hover-text);
+}
+
+.button:hover .hoverEffect,
+.button:hover .hoverBorder,
+.button:focus-visible .hoverEffect,
+.button:focus-visible .hoverBorder {
+  opacity: 1;
+}
+
+.button:hover .hoverBorderEffect,
+.button:focus-visible .hoverBorderEffect {
+  animation: lockerButtonTrace 1150ms both;
+}
+
+.button:hover .echoBorderLarge,
+.button:focus-visible .echoBorderLarge {
+  animation: lockerButtonEchoLarge 1200ms 600ms var(--button-quad) both;
+}
+
+.button:hover .echoBorderSmall,
+.button:focus-visible .echoBorderSmall {
+  animation: lockerButtonEchoSmall 1200ms 550ms var(--button-quad) both;
+}
+
+.button:hover .labelMain,
+.button:focus-visible .labelMain {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.button:hover .labelClone,
+.button:focus-visible .labelClone {
+  opacity: 1;
+  transform: translateY(-100%);
+}
+
+.button:active .inner {
+  transform: none;
+}
+
+.button:focus-visible {
+  outline: 2px solid #d9fff3;
+  outline-offset: 12px;
+}
+
+.button:is(:disabled, [aria-disabled="true"]) {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.button:is(:disabled, [aria-disabled="true"]) .hoverEffect,
+.button:is(:disabled, [aria-disabled="true"]) .hoverBorder,
+.button:is(:disabled, [aria-disabled="true"]) .hoverBorderEffect,
+.button:is(:disabled, [aria-disabled="true"]) .echoBorderLarge,
+.button:is(:disabled, [aria-disabled="true"]) .echoBorderSmall,
+.button:is(:disabled, [aria-disabled="true"]) .labelMain,
+.button:is(:disabled, [aria-disabled="true"]) .labelClone {
+  animation: none;
+  opacity: 0;
+  transform: none;
+}
+
+@media (max-width: 640px) {
+  .button:not([data-size="compact"]) {
+    --button-height: 52px;
+    --button-x: 20px;
+    --button-font-size: 12px;
+    --button-letter-spacing: 0.1em;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .button:not([data-size="compact"]) .frame,
+  .button:not([data-size="compact"]) .inner {
+    width: 100%;
+  }
+
+  .button:not([data-size="compact"]) .labelTrack {
+    max-width: 100%;
+  }
+}
+
+@keyframes lockerButtonTrace {
+  0% {
+    opacity: 0;
+    stroke-dasharray: 0 100;
+    stroke-dashoffset: 0.001;
+  }
+
+  13% {
+    opacity: 1;
+    stroke-dasharray: 0 100;
+    stroke-dashoffset: 0.001;
+  }
+
+  68% {
+    opacity: 1;
+    stroke-dasharray: 30 70;
+    stroke-dashoffset: -35;
+  }
+
+  90% {
+    opacity: 1;
+    stroke-dasharray: 0 100;
+    stroke-dashoffset: -110;
+  }
+
+  100% {
+    opacity: 0;
+    stroke-dasharray: 0 100;
+    stroke-dashoffset: -110;
+  }
+}
+
+@keyframes lockerButtonEchoLarge {
+  0% {
+    opacity: 0;
+    transform: scale(0.7778);
+  }
+
+  50% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.2857);
+  }
+}
+
+@keyframes lockerButtonEchoSmall {
+  0% {
+    opacity: 0;
+    transform: scale(0.875);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.1429);
+  }
+}
+
+@keyframes lockerButtonSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .labelMain,
+  .labelClone,
+  .hoverEffect,
+  .hoverBorder {
+    transition-duration: 0.01ms !important;
+  }
+
+  .button:hover .hoverBorderEffect,
+  .button:focus-visible .hoverBorderEffect,
+  .button:hover .echoBorderLarge,
+  .button:focus-visible .echoBorderLarge,
+  .button:hover .echoBorderSmall,
+  .button:focus-visible .echoBorderSmall {
+    animation: none !important;
+  }
+}

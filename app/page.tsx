@@ -1,5 +1,5 @@
-import { RoutePlaceholder } from "@/components/shared/route-placeholder";
+import { HomePage } from "@/features/home/home-page";
 
 export default function Home() {
-  return <RoutePlaceholder title="Home" />;
+  return <HomePage />;
 }
