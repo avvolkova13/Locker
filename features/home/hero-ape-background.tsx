@@ -23,6 +23,7 @@ type PointerState = {
 };
 
 type BufferData = Float32Array | Uint16Array;
+type BackgroundVariant = "hero" | "steam";
 
 const LINE_COLOR = [0.85, 1, 0.95, 0.18] as const;
 const GRADIENT_FROM = [0.035, 0.045, 0.052] as const;
@@ -202,7 +203,7 @@ function addClosedRibbon(
   }
 }
 
-function buildLineMesh(width: number): Mesh {
+function buildHeroLineMesh(width: number): Mesh {
   const isMobile = width < 680;
   const positions: number[] = [];
   const positions2: number[] = [];
@@ -283,6 +284,86 @@ function buildLineMesh(width: number): Mesh {
     positions2: new Float32Array(positions2),
     vertexCount: positions.length / 3,
   };
+}
+
+function buildSteamLineMesh(width: number): Mesh {
+  const isMobile = width < 680;
+  const positions: number[] = [];
+  const positions2: number[] = [];
+  const indices: number[] = [];
+  const contourCount = isMobile ? 12 : 16;
+  const segmentCount = isMobile ? 260 : 420;
+  const scaleX = isMobile ? 0.86 : 1.08;
+  const scaleY = isMobile ? 1.12 : 0.88;
+
+  for (let contour = 0; contour < contourCount; contour += 1) {
+    const contourProgress = contour / Math.max(1, contourCount - 1);
+
+    if (contour < 3) {
+      continue;
+    }
+
+    const points: Array<[number, number]> = [];
+    const radiusX = 0.3 + contourProgress * 1.58;
+    const radiusY = 0.18 + contourProgress * 1.04;
+    const lineWidth = (isMobile ? 0.0062 : 0.0072) + contourProgress * 0.0008;
+    const opacity = 1.12 + contourProgress * 0.32;
+
+    for (let segment = 0; segment < segmentCount; segment += 1) {
+      const t = segment / segmentCount;
+      const angle = t * Math.PI * 2;
+      const waveA = Math.sin(angle * 3 + contour * 0.52) * 0.035;
+      const waveB = Math.sin(angle * 7.2 - contour * 0.37) * 0.012;
+      const pinch = Math.exp(-((Math.sin(angle + 0.45)) ** 2) / 0.18) * 0.06;
+      const shelf = Math.exp(-((Math.cos(angle - 0.8)) ** 2) / 0.1) * 0.08;
+      const radiusNoise = waveA + waveB - pinch + shelf;
+      const centerPull = Math.exp(-((contourProgress - 0.46) ** 2) / 0.08);
+
+      const x =
+        (Math.cos(angle) * (radiusX + radiusNoise) + Math.sin(angle * 1.8) * 0.04 * centerPull) *
+        scaleX;
+      const y =
+        (Math.sin(angle) * (radiusY + radiusNoise * 0.72) +
+          Math.sin(angle * 2.15 + contour) * 0.036 -
+          0.04) *
+        scaleY;
+
+      points.push([x, y]);
+    }
+
+    addClosedRibbon(positions, positions2, indices, points, lineWidth, opacity);
+  }
+
+  for (let contour = 0; contour < (isMobile ? 4 : 5); contour += 1) {
+    const points: Array<[number, number]> = [];
+    const yBase = -0.68 + contour * 0.18;
+    const lineWidth = isMobile ? 0.0058 : 0.0068;
+    const opacity = 1.02 + contour * 0.1;
+
+    for (let segment = 0; segment < segmentCount; segment += 1) {
+      const t = segment / (segmentCount - 1);
+      const x = -1.72 + t * 3.44;
+      const y =
+        yBase +
+        Math.sin(t * Math.PI * 1.15 + contour * 0.34) * 0.08 +
+        Math.sin(t * Math.PI * 4.4 - contour * 0.72) * 0.018;
+
+      points.push([x, y]);
+    }
+
+    addRibbon(positions, positions2, indices, points, lineWidth, opacity);
+  }
+
+  return {
+    indices: new Uint16Array(indices),
+    positions: new Float32Array(positions),
+    positions2: new Float32Array(positions2),
+    vertexCount: positions.length / 3,
+  };
+}
+
+function buildLineMesh(width: number, variant: BackgroundVariant): Mesh {
+  return variant === "steam" ? buildSteamLineMesh(width) : buildHeroLineMesh(width);
 }
 
 const gradientVertex = `#version 300 es
@@ -402,7 +483,7 @@ void main() {
   fragColor.rgb *= fragColor.a;
 }`;
 
-export function HeroApeBackground() {
+export function HeroApeBackground({ variant = "hero" }: { variant?: BackgroundVariant }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -434,7 +515,7 @@ export function HeroApeBackground() {
     const feedbackProgram = createProgram(gl, feedbackVertex, feedbackFragment, ["tf_disp"]);
     const lineProgram = createProgram(gl, lineVertex, lineFragment);
     const quadBuffer = createBuffer(gl, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
-    let mesh = buildLineMesh(canvasElement.clientWidth || window.innerWidth);
+    let mesh = buildLineMesh(canvasElement.clientWidth || window.innerWidth, variant);
     let positionBuffer = createBuffer(gl, mesh.positions);
     let position2Buffer = createBuffer(gl, mesh.positions2);
     let indexBuffer = createIndexBuffer(gl, mesh.indices);
@@ -460,7 +541,7 @@ export function HeroApeBackground() {
         canvasElement.height = height;
         gl.viewport(0, 0, width, height);
 
-        mesh = buildLineMesh(canvasElement.clientWidth || width);
+        mesh = buildLineMesh(canvasElement.clientWidth || width, variant);
         gl.deleteBuffer(positionBuffer);
         gl.deleteBuffer(position2Buffer);
         gl.deleteBuffer(indexBuffer);
@@ -615,10 +696,10 @@ export function HeroApeBackground() {
       gl.deleteTransformFeedback(feedbackA);
       gl.deleteTransformFeedback(feedbackB);
     };
-  }, []);
+  }, [variant]);
 
   return (
-    <div className={styles.heroApeBackground} aria-hidden="true">
+    <div className={styles.heroApeBackground} data-variant={variant} aria-hidden="true">
       <canvas ref={canvasRef} />
     </div>
   );

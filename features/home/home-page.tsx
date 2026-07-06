@@ -7,6 +7,7 @@ import { HeroApeBackground } from "./hero-ape-background";
 import { HeroProductCube } from "./hero-product-cube";
 import { HomeSectionIndex } from "./home-section-index";
 import { ProductCarousel } from "./product-carousel";
+import { PurchaseScenario } from "./purchase-scenario";
 import styles from "./home-page.module.css";
 
 function Header() {
@@ -50,14 +51,6 @@ function Hero() {
   );
 }
 
-const purchaseSteps = [
-  "Выберите товар",
-  "Пополните баланс",
-  "Подтвердите покупку",
-  "Следите за статусом",
-  "Получите товар",
-];
-
 const faqItems = [
   {
     answer: "Это счёт внутри Locker. Сначала вы пополняете баланс, затем оплачиваете покупки с него.",
@@ -81,31 +74,10 @@ const faqItems = [
   },
 ];
 
-function PurchaseScenario() {
-  return (
-    <section className={styles.purchaseScenario} id="purchase" aria-labelledby="purchase-title">
-      <div className={styles.sectionCopy}>
-        <h2 id="purchase-title">Как это работает</h2>
-      </div>
-
-      <div className={styles.purchaseFlow} aria-label="Процесс покупки">
-        <div className={styles.flowRail} aria-hidden="true" />
-        <ol>
-          {purchaseSteps.map((step, index) => (
-            <li key={step}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <strong>{step}</strong>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
 function SteamRequirements() {
   return (
     <section className={styles.steamRequirements} id="steam" aria-labelledby="steam-title">
+      <HeroApeBackground variant="steam" />
       <div className={styles.steamPanel}>
         <h2 id="steam-title">Steam понадобится только при покупке скинов</h2>
         <p>
