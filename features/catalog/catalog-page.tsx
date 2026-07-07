@@ -18,6 +18,7 @@ import type {
   HomeCarouselCategory,
   HomeCarouselProduct,
 } from "@/types/home-carousel";
+import { addCartItem, COMMERCE_CHANGE_EVENT, getCartItems } from "@/utils/demo-commerce";
 import styles from "./catalog-page.module.css";
 
 type CatalogCategory = HomeCarouselCategory | "all";
@@ -30,6 +31,7 @@ type CatalogPageProps = {
 
 const CATALOG_PAGE_SIZE = 14;
 const CATALOG_LOAD_DELAY_MS = 280;
+const CART_TOAST_DURATION_MS = 2600;
 
 function getCatalogTile(index: number, itemCount = Number.POSITIVE_INFINITY) {
   const positionInGroup = index % 9;
@@ -103,18 +105,37 @@ function parseSales(stat: string) {
 
 export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
   const [activeCategory, setActiveCategory] = useState<CatalogCategory>(initialCategory);
+  const [cartCount, setCartCount] = useState(0);
   const [query, setQuery] = useState("");
   const [source, setSource] = useState<SourceFilter>("all");
   const [sortMode, setSortMode] = useState<SortMode>("popular");
   const [onlyWithImage, setOnlyWithImage] = useState(false);
   const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [addedProductId, setAddedProductId] = useState<string | null>(null);
+  const [cartToast, setCartToast] = useState<string | null>(null);
   const loadMoreTimeoutRef = useRef<number | null>(null);
+  const cartToastTimeoutRef = useRef<number | null>(null);
 
   const sources = useMemo(
     () => Array.from(new Set(homeCarouselProducts.map((product) => product.source))).sort(),
     [],
   );
+
+  useEffect(() => {
+    function updateCartCount() {
+      setCartCount(getCartItems().reduce((total, item) => total + item.quantity, 0));
+    }
+
+    updateCartCount();
+    window.addEventListener("storage", updateCartCount);
+    window.addEventListener(COMMERCE_CHANGE_EVENT, updateCartCount);
+
+    return () => {
+      window.removeEventListener("storage", updateCartCount);
+      window.removeEventListener(COMMERCE_CHANGE_EVENT, updateCartCount);
+    };
+  }, []);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -172,6 +193,10 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
     if (loadMoreTimeoutRef.current) {
       window.clearTimeout(loadMoreTimeoutRef.current);
     }
+
+    if (cartToastTimeoutRef.current) {
+      window.clearTimeout(cartToastTimeoutRef.current);
+    }
   }, []);
 
   const visibleProducts = useMemo(
@@ -195,13 +220,34 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
     }, CATALOG_LOAD_DELAY_MS);
   }
 
+  function handleAddToCart(product: HomeCarouselProduct) {
+    addCartItem(product.id);
+    setAddedProductId(product.id);
+    setCartToast(product.name);
+
+    if (cartToastTimeoutRef.current) {
+      window.clearTimeout(cartToastTimeoutRef.current);
+    }
+
+    cartToastTimeoutRef.current = window.setTimeout(() => {
+      setCartToast(null);
+      cartToastTimeoutRef.current = null;
+    }, CART_TOAST_DURATION_MS);
+  }
+
   return (
     <main className={styles.page}>
       <section className={styles.hero} aria-labelledby="catalog-title">
         <div>
-          <Link className={styles.backLink} href={APP_ROUTES.home}>
-            ← На главную
-          </Link>
+          <div className={styles.heroTop}>
+            <Link className={styles.backLink} href={APP_ROUTES.home}>
+              ← На главную
+            </Link>
+            <Link className={styles.cartQuickLink} href={APP_ROUTES.cart}>
+              <span>Корзина</span>
+              <strong>{cartCount}</strong>
+            </Link>
+          </div>
           <h1 id="catalog-title">КАТАЛОГ LOCKER</h1>
         </div>
       </section>
@@ -278,15 +324,14 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
               const tile = getCatalogTile(index, visibleProducts.length);
 
               return (
-                <Link
+                <article
                   className={styles.productCard}
                   data-layout={tile.layout}
                   data-size={tile.size}
-                  href={getProductRoute(product.id)}
                   key={product.id}
                   style={{ "--product-accent": product.accent } as CSSProperties}
                 >
-                  <div className={styles.productVisual}>
+                  <Link className={styles.productVisual} href={getProductRoute(product.id)}>
                     {product.imageUrl ? (
                       <Image
                         alt={product.imageAlt}
@@ -301,20 +346,32 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
                     ) : (
                       <span>{product.visualCode}</span>
                     )}
-                  </div>
+                  </Link>
                   <div className={styles.productInfo}>
                     <div className={styles.productMeta}>
                       <span>{product.categoryLabel}</span>
                       <span>{product.source}</span>
                     </div>
-                    <h2>{product.name}</h2>
+                    <h2>
+                      <Link href={getProductRoute(product.id)}>{product.name}</Link>
+                    </h2>
                     <p>{product.description}</p>
                     <div className={styles.productBottom}>
-                      <strong>{product.price}</strong>
-                      <span>{product.stat}</span>
+                      <div>
+                        <strong>{product.price}</strong>
+                        <span>{product.stat}</span>
+                      </div>
+                      <button
+                        aria-label={`Добавить в корзину: ${product.name}`}
+                        className={styles.productCartButton}
+                        type="button"
+                        onClick={() => handleAddToCart(product)}
+                      >
+                        {addedProductId === product.id ? "Добавлено" : "В корзину"}
+                      </button>
                     </div>
                   </div>
-                </Link>
+                </article>
               );
             })}
           </div>
@@ -342,6 +399,14 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
           </div>
         ) : null}
       </section>
+
+      {cartToast ? (
+        <div className={styles.cartToast} role="status">
+          <span>Добавлено в корзину</span>
+          <strong>{cartToast}</strong>
+          <Link href={APP_ROUTES.cart}>Перейти в корзину</Link>
+        </div>
+      ) : null}
     </main>
   );
 }

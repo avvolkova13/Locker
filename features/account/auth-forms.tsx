@@ -78,8 +78,7 @@ function AuthForm({
 
   return (
     <section className={styles.formPanel} aria-labelledby={titleId}>
-      <span className={styles.sectionLabel}>{isLogin ? "Вход" : "Регистрация"}</span>
-      <h2 id={titleId}>{isLogin ? "Уже есть аккаунт" : "Новый аккаунт"}</h2>
+      <h2 id={titleId}>{isLogin ? "Вход" : "Регистрация"}</h2>
       <form className={styles.formGrid} noValidate onSubmit={handleSubmit}>
         <label className={styles.field}>
           <span>Email</span>
@@ -140,6 +139,7 @@ function AuthForm({
 
 export function AuthForms() {
   const router = useRouter();
+  const [mode, setMode] = useState<AuthMode>("register");
   const [submitState, setSubmitState] = useState<SubmitState>({
     message: "",
     mode: null,
@@ -185,15 +185,21 @@ export function AuthForms() {
     }, 700);
   }
 
+  const isLogin = mode === "login";
+
   return (
-    <div className={styles.twoColumn}>
-      <AuthForm mode="login" onSubmit={handleSubmit} submitState={submitState} />
+    <div className={styles.authStack}>
       <AuthForm
-        helper="После регистрации откроется нужный шаг."
-        mode="register"
+        helper={isLogin ? undefined : "После регистрации откроется нужный шаг."}
+        key={mode}
+        mode={mode}
         onSubmit={handleSubmit}
         submitState={submitState}
       />
+      <button className={styles.authSwitch} type="button" onClick={() => setMode(isLogin ? "register" : "login")}>
+        <span>{isLogin ? "Нет аккаунта?" : "Уже есть аккаунт?"}</span>
+        <strong>{isLogin ? "Зарегистрироваться" : "Войти"}</strong>
+      </button>
     </div>
   );
 }

@@ -101,6 +101,15 @@ export function saveAuthSession(email: string) {
   window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
 }
 
+export function clearAuthSession() {
+  if (!isBrowser()) {
+    return;
+  }
+
+  window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+}
+
 export function getSafeReturnTo(fallback: string = APP_ROUTES.profile) {
   if (!isBrowser()) {
     return fallback;
@@ -145,6 +154,16 @@ export function addCartItem(productId: string) {
       ];
 
   writeJson(CART_STORAGE_KEY, nextItems);
+  dispatchCommerceChange();
+}
+
+export function setCartItemQuantity(productId: string, quantity: number) {
+  const nextQuantity = Math.max(1, Math.round(quantity));
+
+  writeJson(
+    CART_STORAGE_KEY,
+    getCartItems().map((item) => (item.productId === productId ? { ...item, quantity: nextQuantity } : item)),
+  );
   dispatchCommerceChange();
 }
 

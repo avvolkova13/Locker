@@ -10,7 +10,9 @@ import { APP_ROUTES, getProductRoute } from "@/constants/routes";
 import type { HomeCarouselProduct } from "@/types/home-carousel";
 import {
   addBalance,
+  addCartItem,
   cartNeedsSteam,
+  clearAuthSession,
   clearCart,
   COMMERCE_CHANGE_EVENT,
   createDemoOrder,
@@ -28,6 +30,7 @@ import {
   getSteamData,
   removeCartItem,
   saveSteamData,
+  setCartItemQuantity,
   type DemoCartItem,
   type DemoOrder,
   type DemoPaymentMethod,
@@ -104,6 +107,7 @@ function PageShell({
   children,
   eyebrow,
   side,
+  shellClassName,
   text,
   title,
 }: {
@@ -113,12 +117,13 @@ function PageShell({
   children: ReactNode;
   eyebrow: string;
   side?: ReactNode;
+  shellClassName?: string;
   text: string;
   title: string;
 }) {
   return (
     <main className={styles.page} aria-labelledby="page-title">
-      <div className={styles.shell}>
+      <div className={shellClassName ? `${styles.shell} ${shellClassName}` : styles.shell}>
         <div className={styles.topbar}>
           <Link className={styles.backLink} href={backHref}>
             ← {backLabel}
@@ -138,7 +143,7 @@ function PageShell({
 
         <section className={styles.hero}>
           <div>
-            <span className={styles.eyebrow}>{eyebrow}</span>
+            {eyebrow ? <span className={styles.eyebrow}>{eyebrow}</span> : null}
             <h1 id="page-title">{title}</h1>
             <p>{text}</p>
             {actions ? <div className={styles.actionStack}>{actions}</div> : null}
@@ -153,10 +158,14 @@ function PageShell({
 }
 
 function ProductMiniCard({
+  onDecrease,
+  onIncrease,
   onRemove,
   product,
   quantity = 1,
 }: {
+  onDecrease?: () => void;
+  onIncrease?: () => void;
   onRemove?: () => void;
   product: HomeCarouselProduct;
   quantity?: number;
@@ -178,9 +187,20 @@ function ProductMiniCard({
         </div>
         <h3>{product.name}</h3>
         <p>{product.description}</p>
+        {onDecrease && onIncrease ? (
+          <div className={styles.quantityControl} aria-label={`Количество ${product.name}`}>
+            <button disabled={quantity <= 1} type="button" onClick={onDecrease}>
+              −
+            </button>
+            <span>{quantity}</span>
+            <button type="button" onClick={onIncrease}>
+              +
+            </button>
+          </div>
+        ) : null}
         {onRemove ? (
           <button className={styles.textButton} type="button" onClick={onRemove}>
-            Убрать
+            Удалить
           </button>
         ) : null}
       </div>
@@ -196,17 +216,21 @@ function SummaryCard({
   action,
   notice = "Перед списанием Locker проверит аккаунт, баланс и данные для выдачи.",
   rows,
+  showLabel = true,
+  title = "Проверка перед оплатой",
   total,
 }: {
   action: ReactNode;
   notice?: string;
   rows: Array<[string, string]>;
+  showLabel?: boolean;
+  title?: string;
   total: string;
 }) {
   return (
     <aside className={styles.summaryCard}>
-      <span className={styles.sectionLabel}>Итог</span>
-      <h2>Проверка перед оплатой</h2>
+      {showLabel ? <span className={styles.sectionLabel}>Итог</span> : null}
+      <h2>{title}</h2>
       <div className={styles.summaryRows}>
         {rows.map(([label, value]) => (
           <div key={label}>
@@ -237,14 +261,12 @@ function EmptyState({ action, text, title }: { action: ReactNode; text: string; 
   );
 }
 
-function StatusRail({ balance, hasSteamData, isAuthenticated, needsSteam }: {
+function StatusRail({ balance, hasSteamData, needsSteam }: {
   balance: number;
   hasSteamData: boolean;
-  isAuthenticated: boolean;
   needsSteam: boolean;
 }) {
   const statuses = [
-    ["Аккаунт", isAuthenticated ? "Вход выполнен" : "Нужен вход", isAuthenticated ? undefined : "warning"],
     ["Баланс", balance > 0 ? formatRub(balance) : "0 ₽", balance > 0 ? undefined : "warning"],
     ["Steam", needsSteam ? (hasSteamData ? "Данные указаны" : "Нужны данные") : "Не требуется", needsSteam && !hasSteamData ? "warning" : "muted"],
   ] as const;
@@ -275,15 +297,18 @@ export function CartScreen() {
 
   return (
     <PageShell
-      actions={<LockerButton href={products.length > 0 ? checkoutHref : APP_ROUTES.catalog}>{products.length > 0 ? "Оформить заказ" : "Открыть каталог"}</LockerButton>}
       backHref={APP_ROUTES.catalog}
       backLabel="В каталог"
-      eyebrow="Корзина"
+      eyebrow=""
+      shellClassName={styles.cartPageShell}
       side={
         <div className={styles.ledgerCard}>
           <span className={styles.smallLabel}>Баланс</span>
           <strong>{formatRub(balance)}</strong>
-          <p>Покупка оплачивается только с внутреннего баланса Locker.</p>
+          <p>Сначала пополните баланс картой или через СБП. Покупки списываются с баланса Locker.</p>
+          <Link className={styles.ledgerAction} href={`${APP_ROUTES.balance}?returnTo=${APP_ROUTES.cart}`}>
+            Пополнить
+          </Link>
         </div>
       }
       text="Проверьте товары, цену и условия выдачи. Если товару нужны данные Steam, это будет видно до оплаты."
@@ -296,16 +321,12 @@ export function CartScreen() {
           title="Корзина пуста"
         />
       ) : (
-        <div className={styles.grid}>
+        <div className={`${styles.grid} ${styles.cartGrid}`}>
           <section className={styles.panel} aria-label="Товары в корзине">
             <div className={styles.panelHeader}>
               <div>
-                <span className={styles.sectionLabel}>{products.length} позиции</span>
                 <h2>Товары к покупке</h2>
               </div>
-              <Link className={styles.utilityLink} href={APP_ROUTES.catalog}>
-                Добавить товар
-              </Link>
             </div>
             <div className={styles.itemList}>
               {cartEntries.map(({ item, product }) => (
@@ -313,18 +334,21 @@ export function CartScreen() {
                   key={product.id}
                   product={product}
                   quantity={item.quantity}
+                  onDecrease={() => setCartItemQuantity(product.id, item.quantity - 1)}
+                  onIncrease={() => addCartItem(product.id)}
                   onRemove={() => removeCartItem(product.id)}
                 />
               ))}
             </div>
           </section>
           <SummaryCard
-            action={<LockerButton href={checkoutHref}>{session ? "Продолжить" : "Войти и продолжить"}</LockerButton>}
+            action={<LockerButton href={checkoutHref}>{session ? "Оформить заказ" : "Войти и оформить"}</LockerButton>}
             rows={[
               ["Товары", String(products.length)],
               ["Оплата", "Баланс Locker"],
-              ["Аккаунт", session ? "Вход выполнен" : "Нужен вход"],
             ]}
+            showLabel={false}
+            title="Итог"
             total={formatRub(totalRub)}
           />
         </div>
@@ -409,8 +433,8 @@ export function CheckoutScreen() {
       actions={<LockerButton href={`${APP_ROUTES.balance}?returnTo=${APP_ROUTES.checkout}`}>Пополнить баланс</LockerButton>}
       backHref={APP_ROUTES.cart}
       backLabel="В корзину"
-      eyebrow="Оформление"
-      side={<StatusRail balance={balance} hasSteamData={hasSteamData} isAuthenticated={Boolean(session)} needsSteam={needsSteam} />}
+      eyebrow=""
+      side={<StatusRail balance={balance} hasSteamData={hasSteamData} needsSteam={needsSteam} />}
       text="Перед оплатой Locker проверяет вход, баланс и данные для выдачи."
       title="Оформление заказа"
     >
@@ -427,7 +451,7 @@ export function CheckoutScreen() {
               <div>
                 <span className={styles.sectionLabel}>Заказ</span>
                 <h2>Проверьте состав</h2>
-                <p>Оплата списывается только с внутреннего баланса.</p>
+                <p>Карта и СБП используются для пополнения. Сам заказ списывается с баланса Locker.</p>
               </div>
             </div>
             <div className={styles.itemList}>
@@ -476,7 +500,6 @@ export function CheckoutScreen() {
               </button>
             }
             rows={[
-              ["Аккаунт", session ? "Вход выполнен" : "Нужен вход"],
               ["Баланс", formatRub(balance)],
               ["Steam", needsSteam ? (hasSteamData ? "Данные есть" : "Нужны данные") : "Не требуется"],
             ]}
@@ -490,21 +513,34 @@ export function CheckoutScreen() {
 
 export function AuthScreen() {
   return (
-    <PageShell
-      actions={<LockerButton href={APP_ROUTES.catalog}>Перейти в каталог</LockerButton>}
-      eyebrow="Аккаунт"
-      side={
-        <div className={styles.ledgerCard}>
-          <span className={styles.smallLabel}>Аккаунт</span>
-          <strong>Баланс</strong>
-          <p>Профиль, корзина и история покупок связаны с аккаунтом Locker.</p>
+    <main className={styles.page} aria-labelledby="page-title">
+      <div className={styles.shell}>
+        <div className={styles.topbar}>
+          <Link className={styles.backLink} href={APP_ROUTES.home}>
+            ← На главную
+          </Link>
+          <div className={styles.topLinks}>
+            <Link className={styles.utilityLink} href={APP_ROUTES.catalog}>
+              Каталог
+            </Link>
+            <Link className={styles.utilityLink} href={APP_ROUTES.cart}>
+              Корзина
+            </Link>
+            <Link className={styles.utilityLink} href={APP_ROUTES.profile}>
+              Профиль
+            </Link>
+          </div>
         </div>
-      }
-      text="Вход нужен для баланса, оформления покупки и истории заказов."
-      title="Вход и регистрация"
-    >
-      <AuthForms />
-    </PageShell>
+
+        <section className={styles.authLayout}>
+          <div className={styles.authIntro}>
+            <h1 id="page-title">Вход и регистрация</h1>
+            <p>Вход нужен для баланса, оформления покупки и истории заказов.</p>
+          </div>
+          <AuthForms />
+        </section>
+      </div>
+    </main>
   );
 }
 
@@ -540,20 +576,18 @@ export function BalanceScreen() {
   return (
     <PageShell
       actions={<LockerButton href={returnTo}>{returnTo === APP_ROUTES.checkout ? "Вернуться к оформлению" : "Выбрать товар"}</LockerButton>}
-      eyebrow="Баланс"
+      eyebrow=""
       side={
         <div className={styles.ledgerCard}>
-          <span className={styles.smallLabel}>Доступно</span>
           <strong>{formatRub(balance)}</strong>
           <p>Баланс используется для оплаты товаров внутри Locker.</p>
         </div>
       }
-      text="Сначала пополните внутренний счёт, затем оплатите покупку с баланса Locker."
+      text="Пополните баланс картой или через СБП, затем оплатите покупку с баланса Locker."
       title="Пополнение баланса"
     >
-      <div className={styles.grid}>
+      <div className={styles.balanceFlow}>
         <section className={styles.formPanel} aria-labelledby="balance-title">
-          <span className={styles.sectionLabel}>Сумма</span>
           <h2 id="balance-title">Выберите пополнение</h2>
           <div className={styles.amountGrid} aria-label="Варианты суммы">
             {[500, 1000, 3000].map((value) => (
@@ -571,8 +605,8 @@ export function BalanceScreen() {
             ))}
           </div>
           <label className={styles.field}>
-            <span>Своя сумма</span>
             <input
+              aria-label="Своя сумма пополнения"
               inputMode="numeric"
               placeholder="Например, 1500"
               value={customAmount}
@@ -584,14 +618,8 @@ export function BalanceScreen() {
               {message.text}
             </p>
           ) : null}
-        </section>
-        <section className={styles.panel} aria-labelledby="method-title">
-          <div className={styles.panelHeader}>
-            <div>
-              <span className={styles.sectionLabel}>Способ</span>
-              <h2 id="method-title">Выберите способ оплаты</h2>
-            </div>
-          </div>
+          <div className={styles.paymentStep} aria-labelledby="method-title">
+          <h2 id="method-title">Выберите способ оплаты</h2>
           <div className={styles.methodGrid}>
             <button className={styles.methodCard} data-active={method === "card"} type="button" onClick={() => setMethod("card")}>
               <strong>Банковская карта</strong>
@@ -601,6 +629,7 @@ export function BalanceScreen() {
               <strong>СБП</strong>
               <span>Перевод через СБП с проверкой суммы перед оплатой.</span>
             </button>
+          </div>
           </div>
           <div className={styles.actionStack}>
             <button className={styles.plainButton} disabled={isLoading} type="button" onClick={handleTopUp}>
@@ -614,17 +643,27 @@ export function BalanceScreen() {
 }
 
 export function ProfileScreen() {
-  const { balance, cartEntries, orders, session, steamData } = useCommerceSnapshot();
+  const router = useRouter();
+  const { balance, cartEntries, orders, session } = useCommerceSnapshot();
+
+  function handleSignOut() {
+    clearAuthSession();
+    router.push(APP_ROUTES.auth);
+  }
 
   return (
     <PageShell
-      actions={<LockerButton href={APP_ROUTES.purchaseHistory}>История покупок</LockerButton>}
       eyebrow="Профиль"
       side={
         <div className={styles.ledgerCard}>
           <span className={styles.smallLabel}>Состояние</span>
           <strong>{session ? "Активен" : "Гость"}</strong>
           <p>{session ? session.email : "Войдите, чтобы оформить покупку и сохранить историю."}</p>
+          {session ? (
+            <button className={styles.ledgerAction} type="button" onClick={handleSignOut}>
+              Выйти
+            </button>
+          ) : null}
         </div>
       }
       text="Профиль собирает баланс, корзину и покупки в одном месте."
@@ -658,15 +697,6 @@ export function ProfileScreen() {
             <span>Открыть историю</span>
           </Link>
         </section>
-        <section className={styles.profileCard}>
-          <span className={styles.sectionLabel}>Steam</span>
-          <h2>{steamData?.steamId ? "Указан" : "Не указан"}</h2>
-          <p>Данные запрашиваются только для игровых предметов.</p>
-          <div className={styles.profileMetric}>
-            <span>Статус</span>
-            <strong>{steamData?.tradeUrl ? "Готово" : "По запросу"}</strong>
-          </div>
-        </section>
       </div>
     </PageShell>
   );
@@ -677,21 +707,14 @@ export function PurchaseHistoryScreen() {
 
   return (
     <PageShell
-      actions={<LockerButton href={APP_ROUTES.catalog}>Открыть каталог</LockerButton>}
+      actions={<LockerButton href={APP_ROUTES.catalog} size="compact">Открыть каталог</LockerButton>}
       backHref={APP_ROUTES.profile}
       backLabel="В профиль"
-      eyebrow="Покупки"
-      side={
-        <div className={styles.ledgerCard}>
-          <span className={styles.smallLabel}>История</span>
-          <strong>{orders.length}</strong>
-          <p>Статусы помогают понять, что происходит с каждой покупкой.</p>
-        </div>
-      }
+      eyebrow=""
       text="Здесь видно, что произошло с покупкой и какое действие требуется дальше."
       title="История покупок"
     >
-      <div className={styles.grid}>
+      <div className={styles.historyLayout}>
         <section className={styles.panel} aria-label="Список покупок">
           <div className={styles.panelHeader}>
             <div>
@@ -714,7 +737,7 @@ export function PurchaseHistoryScreen() {
                       {getStatusLabel(order.status)}
                     </span>
                     <h3>{order.products.map((product) => product.name).join(", ")}</h3>
-                    <p>Заказ {order.id}. Оплата списана с внутреннего баланса.</p>
+                    <p>Заказ {order.id}. Оплата списана с баланса Locker.</p>
                     <div className={styles.historyFooter}>
                       {order.products[0] ? (
                         <Link className={styles.utilityLink} href={getProductRoute(order.products[0].id)}>
@@ -737,14 +760,9 @@ export function PurchaseHistoryScreen() {
             </div>
           )}
         </section>
-        <section className={styles.panel} aria-labelledby="status-title">
-          <div className={styles.panelHeader}>
-            <div>
-              <span className={styles.sectionLabel}>Статусы</span>
-              <h2 id="status-title">Что означает статус</h2>
-            </div>
-          </div>
-          <div className={styles.statusRail}>
+        <section className={styles.statusGuide} aria-labelledby="status-title">
+          <h2 id="status-title">Что означает статус</h2>
+          <div className={styles.statusGuideList}>
             {STATUS_EXPLANATIONS.map(([status, text]) => (
               <div className={styles.statusRow} key={status}>
                 <strong>{status}</strong>

@@ -14,6 +14,11 @@
   padding: clamp(24px, 4vw, 46px) 0 clamp(72px, 8vw, 112px);
 }
 
+.cartPageShell {
+  --cart-aside-width: 440px;
+  width: min(1380px, calc(100% - 44px));
+}
+
 .topbar {
   display: flex;
   flex-wrap: wrap;
@@ -78,6 +83,10 @@
   margin-bottom: clamp(24px, 4vw, 42px);
 }
 
+.cartPageShell .hero {
+  grid-template-columns: minmax(0, 1fr) var(--cart-aside-width);
+}
+
 .eyebrow,
 .sectionLabel,
 .field span,
@@ -111,6 +120,34 @@
 .heroAside {
   display: grid;
   gap: 12px;
+}
+
+.authLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 0.58fr);
+  gap: clamp(28px, 7vw, 92px);
+  align-items: start;
+  padding-top: clamp(26px, 5vw, 76px);
+}
+
+.authIntro {
+  max-width: 760px;
+}
+
+.authIntro h1 {
+  margin: 0;
+  font-size: clamp(3.1rem, 6.8vw, 7.4rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 0.9;
+}
+
+.authIntro p {
+  max-width: 620px;
+  margin: 24px 0 0;
+  color: rgb(242 245 239 / 0.68);
+  font-size: clamp(1.02rem, 1.35vw, 1.28rem);
+  line-height: 1.54;
 }
 
 .ledgerCard,
@@ -153,8 +190,44 @@
   line-height: 1.55;
 }
 
+.ledgerAction {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(144 246 217 / 0.34);
+  border-radius: 999px;
+  margin-top: 18px;
+  padding: 0 16px;
+  background: rgb(144 246 217 / 0.08);
+  color: rgb(242 245 239 / 0.86);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  transition:
+    border-color 220ms ease,
+    color 220ms ease,
+    background-color 220ms ease;
+}
+
+.ledgerAction:hover,
+.ledgerAction:focus-visible {
+  border-color: rgb(144 246 217 / 0.62);
+  background: rgb(144 246 217 / 0.13);
+  color: #f2f5ef;
+}
+
+.ledgerAction:focus-visible {
+  outline: 2px solid rgb(144 246 217 / 0.72);
+  outline-offset: 4px;
+}
+
 .grid,
-.twoColumn {
+.twoColumn,
+.balanceFlow {
   display: grid;
   gap: 16px;
 }
@@ -163,8 +236,22 @@
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
 }
 
+.cartGrid {
+  grid-template-columns: minmax(0, 1fr) var(--cart-aside-width);
+  align-items: stretch;
+}
+
 .twoColumn {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.authStack {
+  display: grid;
+  gap: 14px;
+}
+
+.balanceFlow {
+  max-width: 860px;
 }
 
 .panel,
@@ -174,6 +261,11 @@
 .emptyState,
 .profileCard {
   padding: clamp(20px, 3vw, 32px);
+}
+
+.summaryCard {
+  display: flex;
+  flex-direction: column;
 }
 
 .panelHeader {
@@ -208,8 +300,8 @@
 
 .itemCard {
   display: grid;
-  grid-template-columns: 124px minmax(0, 1fr) auto;
-  gap: 18px;
+  grid-template-columns: 104px minmax(0, 1fr) minmax(126px, auto);
+  gap: 14px;
   align-items: center;
   padding: 16px;
 }
@@ -258,7 +350,7 @@
 
 .itemCard h3 {
   margin: 0;
-  font-size: clamp(1.22rem, 1.8vw, 1.8rem);
+  font-size: clamp(1.18rem, 1.45vw, 1.55rem);
   line-height: 1;
 }
 
@@ -271,16 +363,21 @@
 .itemPrice {
   display: grid;
   gap: 6px;
-  min-width: 150px;
+  min-width: 126px;
   justify-items: end;
 }
 
-.itemPrice strong,
 .totalRow strong,
 .historyPrice {
   font-family: var(--font-heading);
   font-size: clamp(1.45rem, 2vw, 2.25rem);
   line-height: 0.95;
+}
+
+.itemPrice strong {
+  font-family: var(--font-heading);
+  font-size: clamp(1.14rem, 1.35vw, 1.55rem);
+  line-height: 0.98;
 }
 
 .itemPrice span {
@@ -289,6 +386,42 @@
   font-size: 0.72rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.quantityControl {
+  display: inline-grid;
+  grid-template-columns: 30px minmax(34px, auto) 30px;
+  width: fit-content;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgb(242 245 239 / 0.13);
+  border-radius: 999px;
+  margin-top: 12px;
+  background: rgb(5 7 9 / 0.36);
+}
+
+.quantityControl button {
+  display: grid;
+  min-height: 30px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: rgb(242 245 239 / 0.82);
+  cursor: pointer;
+  font-family: var(--font-mono);
+}
+
+.quantityControl button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.quantityControl span {
+  min-width: 34px;
+  color: #f2f5ef;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-align: center;
 }
 
 .summaryRows {
@@ -325,6 +458,11 @@
   margin-top: 22px;
 }
 
+.summaryCard .actionStack {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
 .plainButton {
   display: inline-flex;
   min-height: 46px;
@@ -355,19 +493,27 @@
 
 .textButton {
   width: fit-content;
-  border: 0;
+  min-height: 30px;
+  border: 1px solid rgb(242 106 46 / 0.26);
+  border-radius: 999px;
   margin-top: 12px;
-  padding: 0;
-  background: transparent;
-  color: rgb(144 246 217 / 0.82);
+  padding: 0 10px;
+  background: rgb(242 106 46 / 0.06);
+  color: #ffb38a;
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  transition:
+    border-color 220ms ease,
+    color 220ms ease,
+    background-color 220ms ease;
 }
 
 .textButton:hover {
+  border-color: rgb(242 106 46 / 0.54);
+  background: rgb(242 106 46 / 0.1);
   color: #f2f5ef;
 }
 
@@ -392,6 +538,21 @@
   display: grid;
   gap: 16px;
   margin-top: 22px;
+}
+
+.balanceFlow .formPanel {
+  padding: clamp(28px, 4vw, 44px);
+}
+
+.balanceFlow .formPanel h2,
+.paymentStep h2 {
+  margin: 0;
+}
+
+.paymentStep {
+  border-top: 1px solid rgb(242 245 239 / 0.1);
+  margin-top: clamp(28px, 4vw, 44px);
+  padding-top: clamp(24px, 3vw, 36px);
 }
 
 .field {
@@ -458,16 +619,51 @@
   line-height: 1;
 }
 
+.authSwitch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 1px solid rgb(242 245 239 / 0.1);
+  border-radius: 999px;
+  padding: 13px 16px;
+  background: rgb(5 7 9 / 0.38);
+  color: rgb(242 245 239 / 0.58);
+  cursor: pointer;
+  font-size: 0.94rem;
+  line-height: 1.35;
+}
+
+.authSwitch strong {
+  color: #90f6d9;
+  font: inherit;
+  font-weight: 500;
+}
+
+.authSwitch:hover strong,
+.authSwitch:focus-visible strong {
+  color: #f2f5ef;
+}
+
+.authSwitch:focus-visible {
+  outline: 2px solid rgb(144 246 217 / 0.72);
+  outline-offset: 4px;
+}
+
 .amountGrid,
 .methodGrid,
 .profileGrid,
-.historyList {
+.historyList,
+.historyLayout {
   display: grid;
   gap: 12px;
 }
 
 .amountGrid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 20px;
 }
 
 .amountGrid button,
@@ -498,6 +694,10 @@
   padding: 16px;
 }
 
+.paymentStep .methodGrid {
+  margin-top: 18px;
+}
+
 .methodCard {
   cursor: pointer;
   text-align: left;
@@ -525,6 +725,47 @@
 .statusRail {
   display: grid;
   gap: 12px;
+}
+
+.statusGuide {
+  border-top: 1px solid rgb(242 245 239 / 0.1);
+  margin-top: 6px;
+  padding-top: 18px;
+}
+
+.statusGuide h2 {
+  margin: 0 0 12px;
+  color: rgb(242 245 239 / 0.54);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.statusGuideList {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.statusGuide .statusRow {
+  display: grid;
+  gap: 6px;
+  align-items: start;
+  justify-content: start;
+  padding: 10px;
+}
+
+.statusGuide .statusRow strong {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.statusGuide .statusRow span {
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .statusRow {
@@ -566,7 +807,20 @@
 }
 
 .profileCard {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 12px;
   min-height: 190px;
+}
+
+.profileCard h2,
+.profileCard p {
+  margin-top: 0;
+}
+
+.profileCard .panelLink,
+.profileCard .profileMetric {
+  margin-top: auto;
 }
 
 .profileMetric strong {
@@ -652,7 +906,11 @@
 
 @media (max-width: 980px) {
   .hero,
+  .authLayout,
   .grid,
+  .cartGrid,
+  .statusGuideList,
+  .balanceFlow,
   .twoColumn,
   .profileGrid {
     grid-template-columns: 1fr;
@@ -678,6 +936,14 @@
 
   .hero h1 {
     font-size: clamp(2.7rem, 16vw, 4.5rem);
+  }
+
+  .authLayout {
+    padding-top: 10px;
+  }
+
+  .authIntro h1 {
+    font-size: clamp(2.7rem, 14vw, 4.7rem);
   }
 
   .panelHeader,

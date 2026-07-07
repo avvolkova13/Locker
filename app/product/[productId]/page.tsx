@@ -222,7 +222,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </li>
             <li>
               <strong>Добавьте в корзину</strong>
-              <p>Покупка оформляется внутри аккаунта Locker и оплачивается с внутреннего баланса.</p>
+              <p>Пополните баланс картой или через СБП. Покупка списывается с баланса Locker.</p>
             </li>
             <li>
               <strong>Следите за статусом</strong>
