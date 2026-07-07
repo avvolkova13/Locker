@@ -334,26 +334,6 @@ function buildSteamLineMesh(width: number): Mesh {
     addClosedRibbon(positions, positions2, indices, points, lineWidth, opacity);
   }
 
-  for (let contour = 0; contour < (isMobile ? 4 : 5); contour += 1) {
-    const points: Array<[number, number]> = [];
-    const yBase = -0.68 + contour * 0.18;
-    const lineWidth = isMobile ? 0.0058 : 0.0068;
-    const opacity = 1.02 + contour * 0.1;
-
-    for (let segment = 0; segment < segmentCount; segment += 1) {
-      const t = segment / (segmentCount - 1);
-      const x = -1.72 + t * 3.44;
-      const y =
-        yBase +
-        Math.sin(t * Math.PI * 1.15 + contour * 0.34) * 0.08 +
-        Math.sin(t * Math.PI * 4.4 - contour * 0.72) * 0.018;
-
-      points.push([x, y]);
-    }
-
-    addRibbon(positions, positions2, indices, points, lineWidth, opacity);
-  }
-
   return {
     indices: new Uint16Array(indices),
     positions: new Float32Array(positions),

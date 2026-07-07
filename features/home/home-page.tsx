@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthHeaderButton } from "@/components/shared/auth-header-button";
 import { LockerButton } from "@/components/shared/locker-button";
 import { APP_ROUTES } from "@/constants/routes";
 import { FooterWord } from "./footer-word";
@@ -23,9 +24,7 @@ function Header() {
         <Link href="#faq">FAQ</Link>
       </nav>
       <div className={styles.headerActions}>
-        <LockerButton href={APP_ROUTES.auth} size="compact" variant="ghost">
-          Войти
-        </LockerButton>
+        <AuthHeaderButton />
       </div>
     </header>
   );

@@ -4,7 +4,7 @@ export default function CookiesPage() {
   return (
     <RoutePlaceholder
       eyebrow="Документ"
-      text="Политика Cookie будет добавлена после утверждения аналитики, авторизации и технических cookie сайта."
+      text="Политика описывает cookie для работы сайта, аккаунта, корзины и настроек пользователя."
       title="Политика Cookie"
     >
       <article>
@@ -12,7 +12,7 @@ export default function CookiesPage() {
         <ul>
           <li>Cookie для работы сайта и аккаунта.</li>
           <li>Cookie для корзины и сессии пользователя.</li>
-          <li>Аналитику, если она будет подключена.</li>
+          <li>Cookie для измерения качества работы сайта.</li>
           <li>Способ управления cookie.</li>
         </ul>
       </article>

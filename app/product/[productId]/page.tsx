@@ -3,8 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
-import { LockerButton } from "@/components/shared/locker-button";
 import { APP_ROUTES, getProductRoute } from "@/constants/routes";
+import { ProductActions } from "@/features/account/product-actions";
 import { homeCarouselProducts } from "@/mock-data/home-carousel";
 import type { HomeCarouselProduct } from "@/types/home-carousel";
 import styles from "./product-page.module.css";
@@ -169,7 +169,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <strong>{product.price}</strong>
                 <span className={styles.stat}>{product.stat}</span>
               </div>
-              <LockerButton href={APP_ROUTES.cart}>Добавить в корзину</LockerButton>
+              <ProductActions productId={product.id} />
             </div>
 
             <div className={styles.sourceNote}>

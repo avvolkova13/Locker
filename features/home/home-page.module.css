@@ -36,11 +36,7 @@
 }
 
 .page::before {
-  background-image:
-    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.026) 1px, transparent 1px);
-  background-size: 84px 84px;
-  mask-image: linear-gradient(180deg, rgb(0 0 0 / 0.9), transparent 78%);
+  display: none;
 }
 
 .page::after {
@@ -239,6 +235,18 @@
   isolation: isolate;
 }
 
+.hero::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  z-index: 2;
+  height: clamp(140px, 18vh, 260px);
+  content: "";
+  background: linear-gradient(180deg, transparent 0%, rgb(5 7 9 / 0.64) 58%, #050709 100%);
+  pointer-events: none;
+}
+
 .heroApeBackground {
   position: absolute;
   inset: 0;
@@ -396,6 +404,18 @@
     linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px);
   background-size: 92px 92px;
   mask-image: linear-gradient(180deg, transparent, #000 18%, #000 72%, transparent);
+}
+
+.productCarouselSection::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  z-index: 2;
+  height: clamp(120px, 16vh, 220px);
+  content: "";
+  background: linear-gradient(180deg, transparent 0%, rgb(5 7 9 / 0.72) 62%, #050709 100%);
+  pointer-events: none;
 }
 
 .carouselHeader,
@@ -984,14 +1004,10 @@
   height: 100%;
   content: "";
   background:
-    linear-gradient(rgb(244 247 241 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(244 247 241 / 0.035) 1px, transparent 1px),
     radial-gradient(circle at 62% 58%, rgb(144 246 217 / 0.13), transparent 32vw),
     radial-gradient(circle at 28% 84%, rgb(242 106 46 / 0.08), transparent 24vw),
     linear-gradient(180deg, #050709 0%, #07100f 48%, #050709 100%);
   background-size:
-    94px 94px,
-    94px 94px,
     auto,
     auto,
     auto;
@@ -1015,10 +1031,12 @@
     ),
     linear-gradient(
       180deg,
-      rgb(5 7 9 / 0.82) 0%,
-      transparent 18%,
-      transparent 82%,
-      rgb(5 7 9 / 0.64) 100%
+      #050709 0%,
+      rgb(5 7 9 / 0.82) 8%,
+      transparent 22%,
+      transparent 74%,
+      rgb(5 7 9 / 0.72) 90%,
+      #050709 100%
     );
   pointer-events: none;
 }
@@ -1294,7 +1312,20 @@
 }
 
 .steamRequirements::after {
-  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  background: linear-gradient(
+    180deg,
+    #050709 0%,
+    rgb(5 7 9 / 0.82) 7%,
+    transparent 24%,
+    transparent 74%,
+    rgb(5 7 9 / 0.78) 91%,
+    #050709 100%
+  );
+  pointer-events: none;
 }
 
 .steamRequirements .heroApeBackground {
@@ -1339,11 +1370,25 @@
 }
 
 .faqSection {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(280px, 0.52fr) minmax(0, 1fr);
   gap: clamp(26px, 6vw, 88px);
   align-items: start;
   padding: clamp(76px, 10vw, 140px) 0;
+}
+
+.faqSection::before {
+  position: absolute;
+  top: clamp(-180px, -12vw, -96px);
+  left: 50%;
+  z-index: -1;
+  width: 100vw;
+  height: clamp(160px, 16vw, 260px);
+  content: "";
+  background: linear-gradient(180deg, rgb(5 7 9 / 0.94) 0%, rgb(5 7 9 / 0.62) 48%, transparent 100%);
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 .faqList {
@@ -1686,11 +1731,7 @@
   inset: 0;
   z-index: -2;
   content: "";
-  background:
-    linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px),
-    linear-gradient(rgb(255 255 255 / 0.022) 1px, transparent 1px);
-  background-size: 104px 104px;
-  mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 100%);
+  display: none;
 }
 
 .footerTop {
