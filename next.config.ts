@@ -1,11 +1,13 @@
 import type { NextConfig } from "next";
 
 const isGithubActionsBuild = process.env.GITHUB_ACTIONS === "true";
-const githubBasePath = "/Locker";
+const githubBasePath = process.env.NEXT_PUBLIC_BASE_PATH ?? (isGithubActionsBuild ? "/Locker" : "");
+
+process.env.NEXT_PUBLIC_BASE_PATH = githubBasePath;
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
-  basePath: isGithubActionsBuild ? githubBasePath : undefined,
+  basePath: githubBasePath || undefined,
   images: {
     unoptimized: true,
   },
