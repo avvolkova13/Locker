@@ -733,8 +733,14 @@
     padding-top: 42px;
   }
 
+  .heroTop {
+    justify-content: flex-start;
+  }
+
   .hero h1 {
-    font-size: clamp(3rem, 13vw, 4.5rem);
+    max-width: 8ch;
+    overflow-wrap: anywhere;
+    font-size: clamp(2.85rem, 11vw, 4.1rem);
   }
 
   .categoryBar {

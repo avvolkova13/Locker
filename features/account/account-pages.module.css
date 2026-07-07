@@ -935,7 +935,8 @@
   }
 
   .hero h1 {
-    font-size: clamp(2.7rem, 16vw, 4.5rem);
+    overflow-wrap: anywhere;
+    font-size: clamp(2.55rem, 13vw, 4.1rem);
   }
 
   .authLayout {
@@ -943,7 +944,8 @@
   }
 
   .authIntro h1 {
-    font-size: clamp(2.7rem, 14vw, 4.7rem);
+    overflow-wrap: anywhere;
+    font-size: clamp(2.55rem, 12vw, 4rem);
   }
 
   .panelHeader,
