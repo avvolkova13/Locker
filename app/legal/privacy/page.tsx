@@ -79,7 +79,7 @@ const userRights = [
 export default function PrivacyPage() {
   return (
     <RoutePlaceholder
-      eyebrow="Документ"
+      eyebrow=""
       text="Политика описывает, как Locker собирает, использует, хранит и защищает персональные данные пользователей."
       title="Политика конфиденциальности"
     >

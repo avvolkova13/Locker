@@ -3,7 +3,7 @@ import { RoutePlaceholder } from "@/components/shared/route-placeholder";
 export default function FaqPage() {
   return (
     <RoutePlaceholder
-      eyebrow="Вопросы"
+      eyebrow=""
       text="Короткие ответы по покупке, балансу, Steam-данным и статусам заказа."
       title="Вопросы и ответы"
     >

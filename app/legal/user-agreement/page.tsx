@@ -43,7 +43,7 @@ const liabilityLimits = [
 export default function UserAgreementPage() {
   return (
     <RoutePlaceholder
-      eyebrow="Документ"
+      eyebrow=""
       text="Правила регулируют использование сайта Locker, учетной записи, сервисов и функций."
       title="Правила и условия использования сервиса"
     >

@@ -5,6 +5,7 @@
   --font-mono: "SFMono-Regular", "Cascadia Mono", "Menlo", monospace;
   --page-bg: #07090c;
   --page-text: #f2f5ef;
+  --control-radius: 16px;
 }
 
 * {

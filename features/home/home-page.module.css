@@ -66,7 +66,7 @@
   align-items: center;
   gap: 24px;
   border: 1px solid rgb(255 255 255 / 0.11);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 8px 10px 8px 24px;
   background: rgb(6 9 12 / 0.74);
   box-shadow: 0 28px 90px rgb(0 0 0 / 0.34);
@@ -286,7 +286,7 @@
   width: fit-content;
   margin: 0 0 24px;
   border: 1px solid rgb(144 246 217 / 0.28);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 9px 13px;
   background: rgb(144 246 217 / 0.08);
   color: var(--accent-2);
@@ -459,7 +459,7 @@
 .carouselFilter {
   min-height: 42px;
   border: 1px solid rgb(244 247 241 / 0.14);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 0 18px;
   background: rgb(255 255 255 / 0.045);
   color: rgb(244 247 241 / 0.68);
@@ -802,7 +802,7 @@
 .carouselMeta span {
   width: fit-content;
   border: 1px solid rgb(244 247 241 / 0.14);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 7px 10px;
   background: rgb(255 255 255 / 0.08);
   color: rgb(244 247 241 / 0.75);
@@ -866,7 +866,7 @@
   width: 64px;
   height: 64px;
   border: 2px solid color-mix(in srgb, var(--active-accent), #f4f7f1 30%);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   background: rgb(5 7 9 / 0.48);
   color: var(--ink);
   cursor: pointer;

@@ -43,7 +43,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid rgb(242 245 239 / 0.13);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 10px 14px;
   background: rgb(5 7 9 / 0.52);
   color: rgb(242 245 239 / 0.74);
@@ -189,7 +189,7 @@
 .profileCard,
 .historyCard {
   border: 1px solid rgb(242 245 239 / 0.12);
-  border-radius: 10px;
+  border-radius: var(--control-radius);
   background:
     linear-gradient(135deg, rgb(255 255 255 / 0.075), transparent 34%),
     rgb(255 255 255 / 0.035);
@@ -225,7 +225,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid rgb(144 246 217 / 0.34);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   margin-top: 18px;
   padding: 0 16px;
   background: rgb(144 246 217 / 0.08);
@@ -343,7 +343,7 @@
   place-items: center;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--item-accent, #90f6d9), transparent 42%);
-  border-radius: 10px;
+  border-radius: var(--control-radius);
   background:
     radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--item-accent, #90f6d9), transparent 62%), transparent 54%),
     repeating-linear-gradient(112deg, rgb(255 255 255 / 0.035) 0 1px, transparent 1px 18px),
@@ -372,7 +372,7 @@
 
 .tag {
   border: 1px solid rgb(242 245 239 / 0.12);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 6px 9px;
   color: rgb(242 245 239 / 0.62);
   font-size: 0.66rem;
@@ -425,7 +425,7 @@
   align-items: center;
   overflow: hidden;
   border: 1px solid rgb(242 245 239 / 0.13);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   margin-top: 12px;
   background: rgb(5 7 9 / 0.36);
 }
@@ -499,7 +499,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid rgb(242 245 239 / 0.12);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   background: rgb(255 255 255 / 0.04);
   color: rgb(242 245 239 / 0.72);
   cursor: pointer;
@@ -525,7 +525,7 @@
   width: fit-content;
   min-height: 30px;
   border: 1px solid rgb(242 106 46 / 0.26);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   margin-top: 12px;
   padding: 0 10px;
   background: rgb(242 106 46 / 0.06);
@@ -544,6 +544,25 @@
 .textButton:hover {
   border-color: rgb(242 106 46 / 0.54);
   background: rgb(242 106 46 / 0.1);
+  color: #f2f5ef;
+}
+
+.forgotPassword {
+  width: fit-content;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: rgb(144 246 217 / 0.76);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-align: left;
+  transition: color 180ms ease;
+}
+
+.forgotPassword:hover,
+.forgotPassword:focus-visible {
   color: #f2f5ef;
 }
 
@@ -598,7 +617,7 @@
 .field select {
   min-height: 52px;
   border: 1px solid rgb(242 245 239 / 0.13);
-  border-radius: 8px;
+  border-radius: var(--control-radius);
   padding: 0 14px;
   background: rgb(5 7 9 / 0.68);
   color: #f2f5ef;
@@ -635,7 +654,7 @@
   display: grid;
   gap: 6px;
   border: 1px solid rgb(144 246 217 / 0.26);
-  border-radius: 10px;
+  border-radius: var(--control-radius);
   padding: 14px;
   background: rgb(144 246 217 / 0.07);
   color: rgb(242 245 239 / 0.72);
@@ -661,7 +680,7 @@
   justify-content: center;
   width: 100%;
   border: 1px solid rgb(242 245 239 / 0.1);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 13px 16px;
   background: rgb(5 7 9 / 0.38);
   color: rgb(242 245 239 / 0.58);
@@ -704,7 +723,7 @@
 .methodCard,
 .panelLink {
   border: 1px solid rgb(242 245 239 / 0.12);
-  border-radius: 10px;
+  border-radius: var(--control-radius);
   background: rgb(255 255 255 / 0.04);
   color: #f2f5ef;
 }
@@ -726,6 +745,12 @@
   display: grid;
   gap: 8px;
   padding: 16px;
+  transition:
+    border-color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms ease,
+    color 220ms ease,
+    transform 220ms ease;
 }
 
 .paymentStep .methodGrid {
@@ -737,9 +762,43 @@
   text-align: left;
 }
 
+.panelLink {
+  position: relative;
+  cursor: pointer;
+}
+
+.panelLink::after {
+  content: "→";
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  color: rgb(144 246 217 / 0);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  transform: translateX(-6px);
+  transition:
+    color 220ms ease,
+    transform 220ms ease;
+}
+
 .methodCard[data-active="true"] {
   border-color: rgb(144 246 217 / 0.5);
   background: rgb(144 246 217 / 0.08);
+}
+
+.panelLink:hover,
+.panelLink:focus-visible {
+  border-color: rgb(144 246 217 / 0.56);
+  background: rgb(144 246 217 / 0.09);
+  box-shadow: 0 0 0 1px rgb(144 246 217 / 0.1), 0 18px 42px rgb(0 0 0 / 0.24);
+  color: #f2f5ef;
+  transform: translateY(-2px);
+}
+
+.panelLink:hover::after,
+.panelLink:focus-visible::after {
+  color: rgb(144 246 217 / 0.88);
+  transform: translateX(0);
 }
 
 .methodCard strong,
@@ -754,6 +813,12 @@
 .panelLink span {
   color: rgb(242 245 239 / 0.52);
   line-height: 1.45;
+  transition: color 220ms ease;
+}
+
+.panelLink:hover span,
+.panelLink:focus-visible span {
+  color: rgb(242 245 239 / 0.74);
 }
 
 .statusRail {
@@ -804,13 +869,13 @@
 
 .statusRow {
   border: 1px solid rgb(242 245 239 / 0.1);
-  border-radius: 10px;
+  border-radius: var(--control-radius);
   padding: 14px;
 }
 
 .status {
   border: 1px solid rgb(144 246 217 / 0.28);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 7px 10px;
   color: rgb(242 245 239 / 0.8);
 }
@@ -901,6 +966,79 @@
   gap: 12px;
 }
 
+.cartToast {
+  position: fixed;
+  right: clamp(18px, 3vw, 34px);
+  bottom: clamp(18px, 3vw, 34px);
+  z-index: 40;
+  display: grid;
+  gap: 7px;
+  width: min(360px, calc(100vw - 36px));
+  border: 1px solid rgb(144 246 217 / 0.36);
+  border-radius: var(--control-radius);
+  padding: 16px;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.08), transparent 38%),
+    rgb(7 12 14 / 0.94);
+  box-shadow: 0 28px 80px rgb(0 0 0 / 0.42);
+  animation: toastIn 260ms ease both;
+}
+
+.cartToast span {
+  color: #90f6d9;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cartToast strong {
+  overflow: hidden;
+  color: #f2f5ef;
+  font-family: var(--font-heading);
+  font-size: 1.28rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cartToast a {
+  width: fit-content;
+  margin-top: 5px;
+  border: 1px solid rgb(242 245 239 / 0.14);
+  border-radius: var(--control-radius);
+  padding: 9px 12px;
+  background: rgb(242 245 239 / 0.08);
+  color: rgb(242 245 239 / 0.86);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cartToast a:hover,
+.cartToast a:focus-visible {
+  border-color: rgb(144 246 217 / 0.54);
+  color: #ffffff;
+}
+
+.cartToast a:focus-visible {
+  outline: 2px solid #9df4df;
+  outline-offset: 4px;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .steamForm {
   border-top: 1px solid rgb(242 245 239 / 0.1);
   margin-top: 24px;
@@ -926,7 +1064,7 @@
 
 .timeline span {
   border: 1px solid rgb(242 245 239 / 0.12);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 7px 10px;
   color: rgb(242 245 239 / 0.48);
   font-family: var(--font-mono);

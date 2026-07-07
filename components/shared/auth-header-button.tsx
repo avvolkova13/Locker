@@ -37,9 +37,9 @@ export function AuthHeaderButton() {
       <LockerButton href={APP_ROUTES.profile} size="compact" variant="ghost">
         Профиль
       </LockerButton>
-      <button className={styles.signOut} type="button" onClick={clearAuthSession}>
+      <LockerButton className={styles.signOut} size="compact" variant="ghost" onClick={clearAuthSession}>
         Выйти
-      </button>
+      </LockerButton>
     </div>
   );
 }

@@ -1,52 +1,19 @@
 .actions {
   display: inline-flex;
-  gap: 8px;
+  gap: 16px;
   align-items: center;
 }
 
 .signOut {
-  min-height: 40px;
-  border: 1px solid rgb(242 245 239 / 0.14);
-  border-radius: 999px;
-  padding: 0 14px;
-  background: rgb(255 255 255 / 0.04);
-  color: rgb(242 245 239 / 0.68);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition:
-    border-color 220ms ease,
-    color 220ms ease,
-    background-color 220ms ease,
-    transform 220ms ease;
-}
-
-.signOut:hover,
-.signOut:focus-visible {
-  border-color: rgb(144 246 217 / 0.42);
-  background: rgb(144 246 217 / 0.08);
-  color: #f2f5ef;
-}
-
-.signOut:focus-visible {
-  outline: 2px solid rgb(144 246 217 / 0.72);
-  outline-offset: 4px;
-}
-
-.signOut:active {
-  transform: translateY(1px);
+  --button-bg: rgb(255 255 255 / 0.025);
+  --button-surface: rgb(255 255 255 / 0.035);
+  --button-stroke-opacity: 0.18;
+  --button-text: rgb(242 245 239 / 0.62);
+  --button-hover-text: #f2f5ef;
 }
 
 @media (max-width: 420px) {
   .actions {
-    gap: 6px;
-  }
-
-  .signOut {
-    min-height: 38px;
-    padding: 0 11px;
-    font-size: 0.62rem;
+    gap: 16px;
   }
 }

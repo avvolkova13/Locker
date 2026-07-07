@@ -3,7 +3,7 @@ import { RoutePlaceholder } from "@/components/shared/route-placeholder";
 export default function ContactsPage() {
   return (
     <RoutePlaceholder
-      eyebrow="Связь"
+      eyebrow=""
       text="Контакты поддержки будут добавлены после подтверждения рабочих каналов связи и юридических реквизитов."
       title="Контакты"
     >

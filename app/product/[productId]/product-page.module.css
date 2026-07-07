@@ -14,13 +14,20 @@
   padding: clamp(24px, 4vw, 48px) 0 clamp(70px, 8vw, 104px);
 }
 
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .backLink {
   display: inline-flex;
   width: fit-content;
   align-items: center;
-  margin-bottom: 16px;
   border: 1px solid rgb(242 245 239 / 0.13);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 10px 14px;
   background: rgb(5 7 9 / 0.48);
   color: rgb(242 245 239 / 0.72);
@@ -35,15 +42,51 @@
     transform 240ms ease;
 }
 
+.cartQuickLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--product-accent), transparent 64%);
+  border-radius: var(--control-radius);
+  padding: 9px 10px 9px 15px;
+  background: color-mix(in srgb, var(--product-accent), transparent 92%);
+  color: rgb(242 245 239 / 0.82);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    border-color 240ms ease,
+    color 240ms ease,
+    background-color 240ms ease,
+    transform 240ms ease;
+}
+
+.cartQuickBadge {
+  display: grid;
+  min-width: 28px;
+  min-height: 28px;
+  place-items: center;
+  border-radius: var(--control-radius);
+  background: #f2f5ef;
+  color: #07100f;
+  font-size: 0.76rem;
+  line-height: 1;
+}
+
 .backLink:hover,
-.backLink:focus-visible {
+.backLink:focus-visible,
+.cartQuickLink:hover,
+.cartQuickLink:focus-visible {
   border-color: color-mix(in srgb, var(--product-accent), white 12%);
   background: color-mix(in srgb, var(--product-accent), transparent 88%);
   color: #f2f5ef;
   transform: translateY(-1px);
 }
 
-.backLink:focus-visible {
+.backLink:focus-visible,
+.cartQuickLink:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--product-accent), white 18%);
   outline-offset: 4px;
 }
@@ -92,7 +135,7 @@
 .mediaPanel {
   min-height: clamp(430px, 46vw, 650px);
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--control-radius);
 }
 
 .productMedia {
@@ -148,7 +191,7 @@
   display: grid;
   align-content: space-between;
   gap: clamp(22px, 3.4vw, 38px);
-  border-radius: 10px;
+  border-radius: var(--control-radius);
   padding: clamp(22px, 3vw, 34px);
 }
 
@@ -172,7 +215,7 @@
 
 .meta span {
   border: 1px solid rgb(242 245 239 / 0.14);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   padding: 7px 10px;
   background: rgb(255 255 255 / 0.06);
   color: rgb(242 245 239 / 0.72);
@@ -252,7 +295,7 @@
   grid-template-columns: minmax(150px, 0.24fr) 1fr;
   gap: clamp(20px, 3.5vw, 42px);
   margin-top: 16px;
-  border-radius: 10px;
+  border-radius: var(--control-radius);
   padding: clamp(22px, 3.6vw, 36px);
 }
 
@@ -298,7 +341,7 @@
 }
 
 .detailsGrid article {
-  border-radius: 8px;
+  border-radius: var(--control-radius);
   padding: clamp(20px, 2.6vw, 28px);
 }
 
@@ -320,7 +363,7 @@
   gap: clamp(22px, 3.6vw, 44px);
   margin-top: 16px;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--control-radius);
   padding: clamp(22px, 3.6vw, 36px);
 }
 
@@ -332,7 +375,7 @@
 
 .process h2 {
   max-width: 360px;
-  margin: 18px 0 0;
+  margin: 0;
   overflow-wrap: anywhere;
   font-size: clamp(1.8rem, 2.7vw, 3.15rem);
   line-height: 0.92;
@@ -364,7 +407,7 @@
   display: grid;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--product-accent), transparent 34%);
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   color: var(--product-accent);
   content: counter(step);
   font-family: var(--font-mono);
@@ -392,7 +435,7 @@
 
 .related {
   margin-top: 16px;
-  border-radius: 10px;
+  border-radius: var(--control-radius);
   padding: clamp(22px, 3.6vw, 36px);
 }
 
@@ -421,7 +464,7 @@
   align-content: stretch;
   gap: 0;
   border: 1px solid rgb(242 245 239 / 0.1);
-  border-radius: 8px;
+  border-radius: var(--control-radius);
   padding: clamp(18px, 2.2vw, 26px);
   background:
     radial-gradient(circle at 76% 18%, color-mix(in srgb, var(--product-accent), transparent 72%), transparent 42%),

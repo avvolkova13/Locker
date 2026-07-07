@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import { APP_ROUTES, getProductRoute } from "@/constants/routes";
-import { ProductActions } from "@/features/account/product-actions";
+import { ProductActions, ProductCartQuickLink } from "@/features/account/product-actions";
 import { homeCarouselProducts } from "@/mock-data/home-carousel";
 import type { HomeCarouselProduct } from "@/types/home-carousel";
 import styles from "./product-page.module.css";
@@ -122,9 +122,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return (
     <main className={styles.page} style={{ "--product-accent": product.accent } as CSSProperties}>
       <div className={styles.shell}>
-        <Link className={styles.backLink} href={APP_ROUTES.catalog}>
-          ← В каталог
-        </Link>
+        <div className={styles.topbar}>
+          <Link className={styles.backLink} href={APP_ROUTES.catalog}>
+            ← В каталог
+          </Link>
+          <ProductCartQuickLink className={styles.cartQuickLink} badgeClassName={styles.cartQuickBadge} />
+        </div>
 
         <nav className={styles.breadcrumbs} aria-label="Навигация">
           <Link href={APP_ROUTES.home}>Главная</Link>
@@ -212,8 +215,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <section className={styles.process} aria-labelledby="process-title">
           <div>
-            <span>Как это работает</span>
-            <h2 id="process-title">Стандартный порядок покупки</h2>
+            <h2 id="process-title">Как это работает</h2>
           </div>
           <ol>
             <li>

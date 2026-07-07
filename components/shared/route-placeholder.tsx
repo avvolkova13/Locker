@@ -28,7 +28,7 @@ export function RoutePlaceholder({
         </nav>
 
         <section className={styles.hero}>
-          <span>{eyebrow}</span>
+          {eyebrow ? <span>{eyebrow}</span> : null}
           <h1 id="page-title">{title}</h1>
           {text ? <p>{text}</p> : null}
           {actions ? <div className={styles.actions}>{actions}</div> : null}

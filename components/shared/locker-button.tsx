@@ -102,6 +102,7 @@ function ButtonChrome({
         </radialGradient>
       </defs>
       <rect
+        className={styles.baseSurface}
         fill="white"
         fillOpacity="1"
         height={height}
@@ -136,6 +137,7 @@ function ButtonChrome({
         y="8"
       />
       <rect
+        className={styles.baseOutline}
         fill="none"
         height={height}
         rx={innerRadius}

@@ -289,6 +289,10 @@ function getProducts(entries: CartEntry[]) {
   return entries.map((entry) => entry.product);
 }
 
+function getAuthHref(returnTo: string) {
+  return `${APP_ROUTES.auth}?returnTo=${returnTo}`;
+}
+
 export function CartScreen() {
   const { balance, cartEntries, session } = useCommerceSnapshot();
   const products = getProducts(cartEntries);
@@ -302,14 +306,24 @@ export function CartScreen() {
       eyebrow=""
       shellClassName={styles.cartPageShell}
       side={
-        <div className={styles.ledgerCard}>
-          <span className={styles.smallLabel}>Баланс</span>
-          <strong>{formatRub(balance)}</strong>
-          <p>Сначала пополните баланс картой или через СБП. Покупки списываются с баланса Locker.</p>
-          <Link className={styles.ledgerAction} href={`${APP_ROUTES.balance}?returnTo=${APP_ROUTES.cart}`}>
-            Пополнить
-          </Link>
-        </div>
+        session ? (
+          <div className={styles.ledgerCard}>
+            <span className={styles.smallLabel}>Баланс</span>
+            <strong>{formatRub(balance)}</strong>
+            <p>Сначала пополните баланс картой или через СБП. Покупки списываются с баланса Locker.</p>
+            <Link className={styles.ledgerAction} href={`${APP_ROUTES.balance}?returnTo=${APP_ROUTES.cart}`}>
+              Пополнить
+            </Link>
+          </div>
+        ) : (
+          <div className={styles.ledgerCard}>
+            <strong>Нужен вход</strong>
+            <p>Войдите, чтобы увидеть баланс и оформить покупку.</p>
+            <Link className={styles.ledgerAction} href={getAuthHref(APP_ROUTES.cart)}>
+              Войти
+            </Link>
+          </div>
+        )
       }
       text="Проверьте товары, цену и условия выдачи. Если товару нужны данные Steam, это будет видно до оплаты."
       title="Корзина"
@@ -434,7 +448,16 @@ export function CheckoutScreen() {
       backHref={APP_ROUTES.cart}
       backLabel="В корзину"
       eyebrow=""
-      side={<StatusRail balance={balance} hasSteamData={hasSteamData} needsSteam={needsSteam} />}
+      side={
+        session ? (
+          <StatusRail balance={balance} hasSteamData={hasSteamData} needsSteam={needsSteam} />
+        ) : (
+          <div className={styles.ledgerCard}>
+            <strong>Нужен вход</strong>
+            <p>Войдите, чтобы проверить баланс и продолжить оформление.</p>
+          </div>
+        )
+      }
       text="Перед оплатой Locker проверяет вход, баланс и данные для выдачи."
       title="Оформление заказа"
     >
@@ -500,7 +523,7 @@ export function CheckoutScreen() {
               </button>
             }
             rows={[
-              ["Баланс", formatRub(balance)],
+              ["Баланс", session ? formatRub(balance) : "После входа"],
               ["Steam", needsSteam ? (hasSteamData ? "Данные есть" : "Нужны данные") : "Не требуется"],
             ]}
             total={formatRub(totalRub)}
@@ -546,7 +569,7 @@ export function AuthScreen() {
 
 export function BalanceScreen() {
   const returnTo = useMemo(() => getSafeReturnTo(APP_ROUTES.catalog), []);
-  const { balance } = useCommerceSnapshot();
+  const { balance, session } = useCommerceSnapshot();
   const [amount, setAmount] = useState(DEFAULT_TOP_UP_AMOUNT);
   const [customAmount, setCustomAmount] = useState("");
   const [method, setMethod] = useState<DemoPaymentMethod>("card");
@@ -571,6 +594,30 @@ export function BalanceScreen() {
         type: "success",
       });
     }, 850);
+  }
+
+  if (!session) {
+    return (
+      <PageShell
+        actions={<LockerButton href={returnTo}>Выбрать товар</LockerButton>}
+        eyebrow=""
+        shellClassName={styles.balancePageShell}
+        side={
+          <div className={styles.ledgerCard}>
+            <strong>Нужен вход</strong>
+            <p>Баланс показывается после входа в аккаунт Locker.</p>
+          </div>
+        }
+        text="Войдите, чтобы пополнить баланс картой или через СБП и оплатить покупку."
+        title="Пополнение баланса"
+      >
+        <EmptyState
+          action={<LockerButton href={getAuthHref(APP_ROUTES.balance)}>Войти</LockerButton>}
+          text="После входа здесь появятся сумма пополнения, способы оплаты и текущий баланс."
+          title="Войдите для пополнения"
+        />
+      </PageShell>
+    );
   }
 
   return (
@@ -652,9 +699,34 @@ export function ProfileScreen() {
     router.push(APP_ROUTES.auth);
   }
 
+  if (!session) {
+    return (
+      <PageShell
+        eyebrow=""
+        side={
+          <div className={styles.ledgerCard}>
+            <strong>Нужен вход</strong>
+            <p>Аккаунт покажет баланс, корзину и историю покупок.</p>
+            <Link className={styles.ledgerAction} href={getAuthHref(APP_ROUTES.profile)}>
+              Войти
+            </Link>
+          </div>
+        }
+        text="Войдите, чтобы увидеть баланс, корзину и историю покупок."
+        title="Профиль Locker"
+      >
+        <EmptyState
+          action={<LockerButton href={getAuthHref(APP_ROUTES.profile)}>Войти</LockerButton>}
+          text="Без входа Locker не показывает аккаунтные данные и баланс."
+          title="Нужен вход в аккаунт"
+        />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell
-      eyebrow="Профиль"
+      eyebrow=""
       side={
         <div className={styles.ledgerCard}>
           <span className={styles.smallLabel}>Состояние</span>
@@ -704,7 +776,26 @@ export function ProfileScreen() {
 }
 
 export function PurchaseHistoryScreen() {
-  const { orders } = useCommerceSnapshot();
+  const { orders, session } = useCommerceSnapshot();
+
+  if (!session) {
+    return (
+      <PageShell
+        backHref={APP_ROUTES.profile}
+        backLabel="В профиль"
+        eyebrow=""
+        shellClassName={styles.historyPageShell}
+        text="Войдите, чтобы увидеть покупки, статусы заказов и дальнейшие действия."
+        title="История покупок"
+      >
+        <EmptyState
+          action={<LockerButton href={getAuthHref(APP_ROUTES.purchaseHistory)}>Войти</LockerButton>}
+          text="История связана с аккаунтом Locker и не показывается без входа."
+          title="Нужен вход"
+        />
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell

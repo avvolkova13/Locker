@@ -53,7 +53,7 @@ const cookieControls = [
 export default function CookiesPage() {
   return (
     <RoutePlaceholder
-      eyebrow="Документ"
+      eyebrow=""
       text="Политика описывает, как Locker использует файлы Cookie и аналогичные технологии при посещении сайта."
       title="Политика использования файлов Cookie"
     >

@@ -50,11 +50,13 @@ function validate(values: FormState) {
 function AuthForm({
   helper,
   mode,
+  onPasswordReset,
   onSubmit,
   submitState,
 }: {
   helper?: string;
   mode: AuthMode;
+  onPasswordReset?: (email: string, setErrors: (errors: FieldErrors) => void) => void;
   onSubmit: (mode: AuthMode, values: FormState, setErrors: (errors: FieldErrors) => void) => void;
   submitState: SubmitState;
 }) {
@@ -122,6 +124,15 @@ function AuthForm({
             </span>
           ) : null}
         </label>
+        {isLogin ? (
+          <button
+            className={styles.forgotPassword}
+            type="button"
+            onClick={() => onPasswordReset?.(values.email, setErrors)}
+          >
+            Забыли пароль?
+          </button>
+        ) : null}
         {helper ? <p className={styles.helperText}>{helper}</p> : null}
         <button className={styles.plainButton} disabled={isLoading} type="submit">
           {isLoading ? "Проверяем…" : isLogin ? "Войти" : "Создать аккаунт"}
@@ -185,6 +196,28 @@ export function AuthForms() {
     }, 700);
   }
 
+  function handlePasswordReset(email: string, setErrors: (errors: FieldErrors) => void) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setErrors({ email: "Введите email для восстановления." });
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setErrors({ email: "Проверьте формат email." });
+      return;
+    }
+
+    setErrors({});
+    setSubmitState({
+      message: "Если email есть в системе, мы отправим ссылку для восстановления.",
+      mode: "login",
+      title: "Инструкция отправлена",
+      type: "success",
+    });
+  }
+
   const isLogin = mode === "login";
 
   return (
@@ -193,6 +226,7 @@ export function AuthForms() {
         helper={isLogin ? undefined : "После регистрации откроется нужный шаг."}
         key={mode}
         mode={mode}
+        onPasswordReset={handlePasswordReset}
         onSubmit={handleSubmit}
         submitState={submitState}
       />
