@@ -25,9 +25,9 @@ import styles from "./home-page.module.css";
 
 const trackRepeatCount = 9;
 const trackCenterRepeat = Math.floor(trackRepeatCount / 2);
-const carouselTransitionMs = 1500;
 const initialTrackIndex =
   homeCarouselProducts.filter((product) => product.category === "steam-wallet").length * trackCenterRepeat;
+const carouselMotionMs = 560;
 
 function wrapIndex(index: number, length: number) {
   return ((index % length) + length) % length;
@@ -51,35 +51,29 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function easeInOutSine(value: number) {
-  return -(Math.cos(Math.PI * value) - 1) / 2;
-}
-
 function getOrbitStyle(
   visualOffset: number,
   productAccent: string,
-  motionDirection: number,
 ): CSSProperties {
-  const clampedOffset = clamp(visualOffset, -4.15, 4.15);
-  const angle = clampedOffset * 0.64;
+  const clampedOffset = clamp(visualOffset, -4.65, 4.65);
+  const angle = clampedOffset * 0.66;
   const sin = Math.sin(angle);
-  const centerWeight = Math.exp(-((Math.abs(clampedOffset) * 1.04) ** 2));
-  const travelBias = motionDirection === 0
-    ? 0
-    : clamp(1 - Math.abs(clampedOffset) * 1.26, 0, 1) * Math.sign(clampedOffset) * motionDirection * 0.16;
-  const frontDepth = clamp(centerWeight + travelBias, 0, 1);
+  const cos = Math.cos(angle);
+  const centerWeight = Math.exp(-((Math.abs(clampedOffset) * 0.92) ** 2));
+  const frontDepth = clamp(centerWeight, 0, 1);
   const sideDepth = 1 - frontDepth;
   const absOffset = Math.abs(clampedOffset);
-  const xVw = sin * 66;
-  const yPx = 14 + sideDepth * 126 + Math.max(0, absOffset - 2.45) * 34;
-  const zPx = -650 + frontDepth * 820;
-  const scale = 0.56 + frontDepth * 0.49 - Math.max(0, absOffset - 2.8) * 0.04;
-  const rotateZ = -4.5 + sin * 12;
-  const rotateY = -sin * 72;
-  const rotateX = sideDepth * 4.5;
-  const opacity = clamp(0.18 + frontDepth ** 1.25 * 0.82, 0, 1);
-  const brightness = clamp(0.28 + frontDepth * 0.72, 0.28, 1);
-  const blur = clamp(sideDepth * 1.7 + Math.max(0, absOffset - 3) * 0.8, 0, 2.4);
+  const backWeight = clamp((-cos + 0.2) / 1.2, 0, 1);
+  const xVw = sin * (62 + backWeight * 12);
+  const yPx = 18 + sideDepth * 118 + backWeight * 46 + Math.max(0, absOffset - 3.1) * 18;
+  const zPx = -720 + frontDepth * 910 - backWeight * 80;
+  const scale = 0.55 + frontDepth * 0.5 - Math.max(0, absOffset - 3.2) * 0.025;
+  const rotateZ = -4.5 + sin * 10.8 + clampedOffset * 0.46;
+  const rotateY = -sin * (62 + sideDepth * 14);
+  const rotateX = sideDepth * 4.2 + backWeight * 2.4;
+  const opacity = clamp(0.12 + frontDepth ** 1.18 * 0.88 - Math.max(0, absOffset - 3.25) * 0.08, 0, 1);
+  const brightness = clamp(0.25 + frontDepth * 0.75, 0.25, 1);
+  const blur = clamp(sideDepth * 1.35 + Math.max(0, absOffset - 3.2) * 0.55, 0, 2.2);
   const tiltVarX = absOffset < 0.55 ? "--active-tilt-x" : "--side-tilt-x";
   const tiltVarY = absOffset < 0.55 ? "--active-tilt-y" : "--side-tilt-y";
 
@@ -89,7 +83,7 @@ function getOrbitStyle(
     filter: `blur(${blur.toFixed(2)}px) brightness(${brightness.toFixed(2)}) saturate(${(0.82 + frontDepth * 0.18).toFixed(2)})`,
     opacity,
     transform: `translate3d(calc(-50% + ${xVw.toFixed(2)}vw), ${yPx.toFixed(2)}px, ${zPx.toFixed(2)}px) rotateZ(${rotateZ.toFixed(2)}deg) rotateY(calc(${rotateY.toFixed(2)}deg + var(${tiltVarY}, 0deg))) rotateX(calc(${rotateX.toFixed(2)}deg + var(${tiltVarX}, 0deg))) scale(${scale.toFixed(3)})`,
-    zIndex: Math.round(40 + frontDepth * 92 + Math.sign(clampedOffset) * motionDirection * 6 - absOffset),
+    zIndex: Math.round(30 + frontDepth * 110 - backWeight * 12),
   } as CSSProperties;
 }
 
@@ -140,16 +134,12 @@ function ProductCard({
 export function ProductCarousel() {
   const [activeCategory, setActiveCategory] = useState<HomeCarouselCategory>("steam-wallet");
   const [activeTrackIndex, setActiveTrackIndex] = useState(initialTrackIndex);
-  const [motionTrackIndex, setMotionTrackIndex] = useState(initialTrackIndex);
   const [dragProgress, setDragProgress] = useState(0);
   const [isMoving, setIsMoving] = useState(false);
   const [isNormalizing, setIsNormalizing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [motionDirection, setMotionDirection] = useState(0);
   const stageRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<number | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const motionTrackIndexRef = useRef(initialTrackIndex);
+  const moveTimerRef = useRef<number | null>(null);
   const dragRef = useRef({
     pointerId: -1,
     progress: 0,
@@ -166,36 +156,29 @@ export function ProductCarousel() {
   );
 
   const activeIndex = wrapIndex(activeTrackIndex, products.length);
+  const visualActiveIndex = activeIndex;
 
   const trackItems = useMemo(
     () =>
       Array.from({ length: products.length * trackRepeatCount }, (_, trackIndex) => ({
         product: products[trackIndex % products.length],
-        productIndex: trackIndex % products.length,
         trackIndex,
       })),
     [products],
   );
 
   useEffect(() => {
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current);
-    }
-
-    if (animationFrameRef.current) {
-      window.cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
     const centeredTrackIndex = products.length * trackCenterRepeat;
 
+    if (moveTimerRef.current) {
+      window.clearTimeout(moveTimerRef.current);
+      moveTimerRef.current = null;
+    }
+
     setIsMoving(false);
-    setMotionDirection(0);
     setIsNormalizing(true);
     setDragProgress(0);
     setActiveTrackIndex(centeredTrackIndex);
-    setMotionTrackIndex(centeredTrackIndex);
-    motionTrackIndexRef.current = centeredTrackIndex;
 
     const frame = window.requestAnimationFrame(() => {
       setIsNormalizing(false);
@@ -205,6 +188,14 @@ export function ProductCarousel() {
       window.cancelAnimationFrame(frame);
     };
   }, [activeCategory, products.length]);
+
+  useEffect(() => {
+    return () => {
+      if (moveTimerRef.current) {
+        window.clearTimeout(moveTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -225,15 +216,16 @@ export function ProductCarousel() {
     };
 
     function animate() {
-      current.x += (target.x - current.x) * 0.08;
-      current.y += (target.y - current.y) * 0.08;
-      stageElement.style.setProperty("--deck-parallax-x", `${(current.x * 18).toFixed(2)}px`);
-      stageElement.style.setProperty("--deck-parallax-y", `${(current.y * 10).toFixed(2)}px`);
-      stageElement.style.setProperty("--deck-tilt-y", `${(current.x * 1.35).toFixed(2)}deg`);
-      stageElement.style.setProperty("--active-tilt-x", `${(-current.y * 4.2).toFixed(2)}deg`);
-      stageElement.style.setProperty("--active-tilt-y", `${(current.x * 5.4).toFixed(2)}deg`);
-      stageElement.style.setProperty("--side-tilt-x", `${(-current.y * 1.2).toFixed(2)}deg`);
-      stageElement.style.setProperty("--side-tilt-y", `${(current.x * 1.6).toFixed(2)}deg`);
+      current.x += (target.x - current.x) * 0.055;
+      current.y += (target.y - current.y) * 0.055;
+      stageElement.style.setProperty("--deck-parallax-x", `${(current.x * 22).toFixed(2)}px`);
+      stageElement.style.setProperty("--deck-parallax-y", `${(current.y * 13).toFixed(2)}px`);
+      stageElement.style.setProperty("--deck-tilt-y", `${(current.x * 1.75).toFixed(2)}deg`);
+      stageElement.style.setProperty("--deck-tilt-x", `${(-current.y * 0.72).toFixed(2)}deg`);
+      stageElement.style.setProperty("--active-tilt-x", `${(-current.y * 3.2).toFixed(2)}deg`);
+      stageElement.style.setProperty("--active-tilt-y", `${(current.x * 4.4).toFixed(2)}deg`);
+      stageElement.style.setProperty("--side-tilt-x", `${(-current.y * 1.45).toFixed(2)}deg`);
+      stageElement.style.setProperty("--side-tilt-y", `${(current.x * 1.95).toFixed(2)}deg`);
       frame = window.requestAnimationFrame(animate);
     }
 
@@ -263,86 +255,35 @@ export function ProductCarousel() {
     };
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current);
-      }
-
-      if (animationFrameRef.current) {
-        window.cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, []);
-
-  function normalizeTrackPosition(targetTrackIndex: number) {
-    const centeredTrackIndex = products.length * trackCenterRepeat + wrapIndex(targetTrackIndex, products.length);
-    const shouldNormalize = targetTrackIndex < products.length * 2 || targetTrackIndex > products.length * (trackRepeatCount - 3);
-
-    if (!shouldNormalize) {
-      return;
-    }
-
-    setIsNormalizing(true);
-    setActiveTrackIndex(centeredTrackIndex);
-    setMotionTrackIndex(centeredTrackIndex);
-    motionTrackIndexRef.current = centeredTrackIndex;
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => {
-        setIsNormalizing(false);
-      });
-    });
-  }
-
   function moveToTrack(targetTrackIndex: number) {
-    if (isMoving) {
-      return;
+    if (moveTimerRef.current) {
+      window.clearTimeout(moveTimerRef.current);
     }
-
-    if (timerRef.current) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-
-    if (animationFrameRef.current) {
-      window.cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-
-    const startTrackIndex = motionTrackIndexRef.current - dragRef.current.progress;
-    const distance = targetTrackIndex - startTrackIndex;
-    const startedAt = performance.now();
 
     setIsNormalizing(false);
     setDragProgress(0);
     setIsMoving(true);
-    setMotionDirection(Math.sign(distance));
     setActiveTrackIndex(targetTrackIndex);
-    setMotionTrackIndex(startTrackIndex);
-    motionTrackIndexRef.current = startTrackIndex;
 
-    function animateTrack(now: number) {
-      const progress = clamp((now - startedAt) / carouselTransitionMs, 0, 1);
-      const easedProgress = easeInOutSine(progress);
-      const nextTrackIndex = startTrackIndex + distance * easedProgress;
+    moveTimerRef.current = window.setTimeout(() => {
+      const centeredTrackIndex = products.length * trackCenterRepeat + wrapIndex(targetTrackIndex, products.length);
+      const shouldNormalize = targetTrackIndex < products.length * 2 || targetTrackIndex > products.length * (trackRepeatCount - 3);
 
-      motionTrackIndexRef.current = nextTrackIndex;
-      setMotionTrackIndex(nextTrackIndex);
+      setIsMoving(false);
 
-      if (progress < 1) {
-        animationFrameRef.current = window.requestAnimationFrame(animateTrack);
+      if (!shouldNormalize) {
         return;
       }
 
-      animationFrameRef.current = null;
-      motionTrackIndexRef.current = targetTrackIndex;
-      setMotionTrackIndex(targetTrackIndex);
-      setIsMoving(false);
-      setMotionDirection(0);
-      normalizeTrackPosition(targetTrackIndex);
-    }
+      setIsNormalizing(true);
+      setActiveTrackIndex(centeredTrackIndex);
 
-    animationFrameRef.current = window.requestAnimationFrame(animateTrack);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          setIsNormalizing(false);
+        });
+      });
+    }, carouselMotionMs);
   }
 
   function moveToIndex(nextIndex: number) {
@@ -387,7 +328,6 @@ export function ProductCarousel() {
       hasDragged: false,
     };
     setIsDragging(true);
-    motionTrackIndexRef.current = motionTrackIndex;
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
@@ -427,11 +367,12 @@ export function ProductCarousel() {
 
     dragRef.current.pointerId = -1;
     setIsDragging(false);
+    setDragProgress(0);
 
     if (shouldMove) {
       moveToTrack(activeTrackIndex + direction);
     } else {
-      setDragProgress(0);
+      moveToTrack(activeTrackIndex);
     }
   }
 
@@ -468,13 +409,13 @@ export function ProductCarousel() {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={finishDrag}
-        style={{ "--active-accent": products[activeIndex]?.accent ?? "#90f6d9" } as CSSProperties}
+        style={{ "--active-accent": products[visualActiveIndex]?.accent ?? "#90f6d9" } as CSSProperties}
       >
         <div className={styles.carouselDeck}>
-          {trackItems.map(({ product, productIndex, trackIndex }) => {
-            const visualOffset = trackIndex - motionTrackIndex + dragProgress;
-            const isVisible = Math.abs(visualOffset) <= 4.15;
-            const isActiveCard = productIndex === activeIndex && Math.abs(visualOffset) < 0.78;
+          {trackItems.map(({ product, trackIndex }) => {
+            const visualOffset = trackIndex - activeTrackIndex + dragProgress;
+            const isVisible = Math.abs(visualOffset) <= 4.65;
+            const isActiveCard = Math.abs(visualOffset) < 0.58;
             const side = !isActiveCard && visualOffset < -0.48 ? "left" : !isActiveCard && visualOffset > 0.48 ? "right" : undefined;
 
             if (!isVisible) {
@@ -495,7 +436,7 @@ export function ProductCarousel() {
                     event.preventDefault();
                   }
                 }}
-                style={getOrbitStyle(visualOffset, product.accent, motionDirection)}
+                style={getOrbitStyle(visualOffset, product.accent)}
                 tabIndex={isVisible ? 0 : -1}
               >
                 <ProductCard isActive={isActiveCard} product={product} />

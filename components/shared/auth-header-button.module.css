@@ -9,7 +9,7 @@
   --button-surface: rgb(255 255 255 / 0.035);
   --button-stroke-opacity: 0.18;
   --button-text: rgb(242 245 239 / 0.62);
-  --button-hover-text: #f2f5ef;
+  --button-hover-text: #07100f;
 }
 
 @media (max-width: 420px) {

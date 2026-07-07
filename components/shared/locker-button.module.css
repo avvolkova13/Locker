@@ -7,7 +7,7 @@
   --button-surface: white;
   --button-stroke-opacity: 1;
   --button-text: #050505;
-  --button-hover-text: #ffffff;
+  --button-hover-text: #07100f;
   --button-quad: cubic-bezier(0.45, 0, 0.55, 1);
   --button-quint-out: cubic-bezier(0.22, 1, 0.36, 1);
   --button-quint-in: cubic-bezier(0.64, 0, 0.78, 0);

@@ -493,6 +493,7 @@
   --active-tilt-y: 0deg;
   --deck-parallax-x: 0px;
   --deck-parallax-y: 0px;
+  --deck-tilt-x: 0deg;
   --deck-tilt-y: 0deg;
   --side-tilt-x: 0deg;
   --side-tilt-y: 0deg;
@@ -524,8 +525,8 @@
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
-  transform: translate3d(var(--deck-parallax-x), var(--deck-parallax-y), 0) rotateX(3deg) rotateY(var(--deck-tilt-y));
-  transition: transform 220ms linear;
+  transform: translate3d(var(--deck-parallax-x), var(--deck-parallax-y), 0) rotateX(calc(3deg + var(--deck-tilt-x))) rotateY(var(--deck-tilt-y));
+  will-change: transform;
 }
 
 .carouselSlot {
@@ -545,15 +546,22 @@
   transform: var(--slot-transform);
   transform-style: preserve-3d;
   opacity: 1;
-  transition: none;
-  will-change: transform, opacity;
+  transition:
+    transform 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity, filter;
 }
 
 .carouselStage[data-moving="true"] .carouselSlot {
-  transition: none;
+  transition:
+    transform 560ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .carouselStage[data-normalizing="true"] .carouselSlot,
+.carouselStage[data-dragging="true"] .carouselSlot,
 .carouselStage[data-normalizing="true"] .carouselCard {
   transition: none;
 }
@@ -637,15 +645,15 @@
     linear-gradient(180deg, #101820 0%, #070a0d 100%);
   box-shadow:
     0 52px 120px rgb(0 0 0 / 0.48),
-    0 0 70px color-mix(in srgb, var(--active-accent), transparent 82%);
+    0 0 70px color-mix(in srgb, var(--product-accent), transparent 82%);
   text-align: left;
   transition:
-    border-radius 1140ms cubic-bezier(0.19, 1, 0.22, 1),
-    clip-path 1140ms cubic-bezier(0.19, 1, 0.22, 1);
+    border-radius 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    clip-path 680ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .carouselStage:not([data-moving="true"]):not([data-dragging="true"]) .carouselCard {
-  animation: carouselCardFloat 7.4s ease-in-out infinite;
+  animation: carouselCardFloat 9.6s ease-in-out infinite;
   animation-delay: var(--float-delay);
 }
 
@@ -1875,8 +1883,12 @@
     translate: 0 0;
   }
 
-  50% {
-    translate: 0 -8px;
+  34% {
+    translate: 0 -4px;
+  }
+
+  68% {
+    translate: 0 2px;
   }
 }
 
