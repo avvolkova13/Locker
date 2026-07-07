@@ -84,11 +84,15 @@
   margin-top: clamp(34px, 5vw, 62px);
 }
 
-.content :where(article, section, div:not([class])) {
+.content > :where(article, section, div:not([class])) {
   border: 1px solid rgba(242, 245, 239, 0.12);
   border-radius: 10px;
   background: rgba(242, 245, 239, 0.045);
   padding: clamp(20px, 2.6vw, 28px);
+}
+
+.content > :where(article, section, div:not([class])):only-child {
+  grid-column: 1 / -1;
 }
 
 .content h2,
@@ -98,6 +102,15 @@
   line-height: 1.05;
 }
 
+.content h2:not(:first-child) {
+  margin-top: 34px;
+}
+
+.content h3 {
+  margin-top: 20px;
+  font-size: clamp(18px, 1.7vw, 23px);
+}
+
 .content p,
 .content li {
   color: rgba(242, 245, 239, 0.68);
@@ -105,7 +118,7 @@
 }
 
 .content p {
-  margin: 0;
+  margin: 0 0 12px;
 }
 
 .content ul,
