@@ -249,13 +249,13 @@ function SummaryCard({
   );
 }
 
-function EmptyState({ action, text, title }: { action: ReactNode; text: string; title: string }) {
+function EmptyState({ action, text, title }: { action?: ReactNode; text: string; title: string }) {
   return (
     <section className={styles.emptyState}>
       <div>
         <h2>{title}</h2>
         <p>{text}</p>
-        <div className={styles.actionStack}>{action}</div>
+        {action ? <div className={styles.actionStack}>{action}</div> : null}
       </div>
     </section>
   );
@@ -577,6 +577,7 @@ export function BalanceScreen() {
     <PageShell
       actions={<LockerButton href={returnTo}>{returnTo === APP_ROUTES.checkout ? "Вернуться к оформлению" : "Выбрать товар"}</LockerButton>}
       eyebrow=""
+      shellClassName={styles.balancePageShell}
       side={
         <div className={styles.ledgerCard}>
           <strong>{formatRub(balance)}</strong>
@@ -707,11 +708,11 @@ export function PurchaseHistoryScreen() {
 
   return (
     <PageShell
-      actions={<LockerButton href={APP_ROUTES.catalog} size="compact">Открыть каталог</LockerButton>}
       backHref={APP_ROUTES.profile}
       backLabel="В профиль"
       eyebrow=""
-      text="Здесь видно, что произошло с покупкой и какое действие требуется дальше."
+      shellClassName={styles.historyPageShell}
+      text="Здесь видно, что произошло с покупкой. Какое действие требуется дальше."
       title="История покупок"
     >
       <div className={styles.historyLayout}>
@@ -724,7 +725,6 @@ export function PurchaseHistoryScreen() {
           </div>
           {orders.length === 0 ? (
             <EmptyState
-              action={<LockerButton href={APP_ROUTES.catalog}>Открыть каталог</LockerButton>}
               text="После покупки заказ появится здесь со статусом."
               title="Покупок пока нет"
             />
@@ -737,14 +737,16 @@ export function PurchaseHistoryScreen() {
                       {getStatusLabel(order.status)}
                     </span>
                     <h3>{order.products.map((product) => product.name).join(", ")}</h3>
-                    <p>Заказ {order.id}. Оплата списана с баланса Locker.</p>
-                    <div className={styles.historyFooter}>
-                      {order.products[0] ? (
-                        <Link className={styles.utilityLink} href={getProductRoute(order.products[0].id)}>
-                          Открыть товар
-                        </Link>
-                      ) : null}
-                      <span className={styles.smallLabel}>{new Date(order.createdAt).toLocaleDateString("ru-RU")}</span>
+                    <div className={styles.historyMetaRow}>
+                      <p>Заказ {order.id}. Оплата списана с баланса Locker.</p>
+                      <div className={styles.historyFooter}>
+                        {order.products[0] ? (
+                          <Link className={styles.utilityLink} href={getProductRoute(order.products[0].id)}>
+                            Открыть товар
+                          </Link>
+                        ) : null}
+                        <span className={styles.smallLabel}>{new Date(order.createdAt).toLocaleDateString("ru-RU")}</span>
+                      </div>
                     </div>
                     <div className={styles.timeline}>
                       {getStatusFlow(order.status).map((step) => (

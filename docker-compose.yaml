@@ -1,0 +1,13 @@
+name: locker
+services:
+  locker-site:
+    build:
+      context: .
+      dockerfile: deployments/Dockerfile
+      args:
+        - NEXT_TELEMETRY_DISABLED=${NEXT_TELEMETRY_DISABLED}
+    image: locker
+    container_name: locker
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-3000}:80"

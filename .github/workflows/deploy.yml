@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Locker]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy .env
+        shell: bash
+        run: |
+          cp ~/.env .
+          chmod 600 .env
+
+      - name: Deploy
+        shell: bash
+        run: |
+          docker compose up -d --build
+
+      - name: Check status
+        run: |
+          docker compose ps
+          echo "Логи приложения (последние 20 строк):"
+          docker logs locker --tail 20 || true
+
+      - name: Health check
+        run: |
+          sleep 5
+          if curl -f http://localhost:3000/health; then
+            echo "Приложение работает!"
+          else
+            echo "Health check не прошел, но контейнер запущен"
+            docker logs locker --tail 30
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f .env

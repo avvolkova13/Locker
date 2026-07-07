@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { APP_ROUTES } from "@/constants/routes";
-import { AUTH_CHANGE_EVENT, hasAuthSession } from "@/utils/demo-commerce";
+import { AUTH_CHANGE_EVENT, clearAuthSession, hasAuthSession } from "@/utils/demo-commerce";
 import { LockerButton } from "./locker-button";
+import styles from "./auth-header-button.module.css";
 
 export function AuthHeaderButton() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,9 +24,22 @@ export function AuthHeaderButton() {
     };
   }, []);
 
+  if (!isAuthenticated) {
+    return (
+      <LockerButton href={APP_ROUTES.auth} size="compact" variant="ghost">
+        Войти
+      </LockerButton>
+    );
+  }
+
   return (
-    <LockerButton href={isAuthenticated ? APP_ROUTES.profile : APP_ROUTES.auth} size="compact" variant="ghost">
-      {isAuthenticated ? "Профиль" : "Войти"}
-    </LockerButton>
+    <div className={styles.actions}>
+      <LockerButton href={APP_ROUTES.profile} size="compact" variant="ghost">
+        Профиль
+      </LockerButton>
+      <button className={styles.signOut} type="button" onClick={clearAuthSession}>
+        Выйти
+      </button>
+    </div>
   );
 }
