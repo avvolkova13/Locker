@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -21,6 +22,7 @@ import type {
   HomeCarouselCategory,
   HomeCarouselProduct,
 } from "@/types/home-carousel";
+import { formatProductPrice, formatProductRubApprox } from "@/utils/demo-commerce";
 import styles from "./home-page.module.css";
 
 const trackRepeatCount = 9;
@@ -123,7 +125,8 @@ function ProductCard({
         <h3>{product.name}</h3>
         <p>{product.description}</p>
         <div className={styles.carouselPurchase}>
-          <strong>{product.price}</strong>
+          <strong>{formatProductPrice(product)}</strong>
+          <em>{formatProductRubApprox(product)}</em>
           <span>{product.stat}</span>
         </div>
       </div>
@@ -132,6 +135,7 @@ function ProductCard({
 }
 
 export function ProductCarousel() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<HomeCarouselCategory>("steam-wallet");
   const [activeTrackIndex, setActiveTrackIndex] = useState(initialTrackIndex);
   const [dragProgress, setDragProgress] = useState(0);
@@ -141,6 +145,7 @@ export function ProductCarousel() {
   const stageRef = useRef<HTMLDivElement>(null);
   const moveTimerRef = useRef<number | null>(null);
   const dragRef = useRef({
+    clickHref: null as string | null,
     pointerId: -1,
     progress: 0,
     startX: 0,
@@ -319,7 +324,13 @@ export function ProductCarousel() {
       return;
     }
 
+    const clickTarget = target instanceof Element
+      ? target.closest(`.${styles.carouselSlot}`)
+      : null;
+    const clickHref = clickTarget instanceof HTMLAnchorElement ? clickTarget.getAttribute("href") : null;
+
     dragRef.current = {
+      clickHref,
       pointerId: event.pointerId,
       progress: 0,
       startX: event.clientX,
@@ -357,8 +368,10 @@ export function ProductCarousel() {
     const releaseProgress = dragRef.current.progress;
     const shouldMove = Math.abs(releaseProgress) > 0.22 || Math.abs(deltaX) > 84;
     const direction = (releaseProgress || deltaX) < 0 ? 1 : -1;
+    const wasDragged = dragRef.current.hasDragged;
+    const clickHref = dragRef.current.clickHref;
 
-    if (dragRef.current.hasDragged) {
+    if (wasDragged) {
       suppressClickRef.current = true;
       window.setTimeout(() => {
         suppressClickRef.current = false;
@@ -366,14 +379,25 @@ export function ProductCarousel() {
     }
 
     dragRef.current.pointerId = -1;
+    dragRef.current.clickHref = null;
     setIsDragging(false);
     setDragProgress(0);
 
     if (shouldMove) {
       moveToTrack(activeTrackIndex + direction);
-    } else {
-      moveToTrack(activeTrackIndex);
+      return;
     }
+
+    if (!wasDragged && clickHref) {
+      suppressClickRef.current = true;
+      router.push(clickHref);
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 180);
+      return;
+    }
+
+    moveToTrack(activeTrackIndex);
   }
 
   return (

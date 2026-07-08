@@ -1,6 +1,25 @@
 import { APP_ROUTES } from "@/constants/routes";
 import { homeCarouselProducts } from "@/mock-data/home-carousel";
 import type { HomeCarouselProduct } from "@/types/home-carousel";
+import {
+  formatApproxRubFromLocker,
+  formatLocker,
+  formatLockerConversion,
+  formatLockerExchangeRate,
+  formatRubPlain,
+  lockerToRub,
+  rubToLocker,
+} from "@/utils/currency";
+
+export {
+  formatApproxRubFromLocker,
+  formatLocker,
+  formatLockerConversion,
+  formatLockerExchangeRate,
+  formatRubPlain,
+  lockerToRub,
+  rubToLocker,
+};
 
 export const AUTH_CHANGE_EVENT = "locker-auth-change";
 export const COMMERCE_CHANGE_EVENT = "locker-commerce-change";
@@ -38,10 +57,10 @@ export type DemoOrder = {
   products: HomeCarouselProduct[];
   status: DemoOrderStatus;
   steamData?: DemoSteamData;
-  totalRub: number;
+  totalLk: number;
 };
 
-export const DEFAULT_TOP_UP_AMOUNT = 3000;
+export const DEFAULT_TOP_UP_AMOUNT_RUB = 500;
 
 function isBrowser() {
   return typeof window !== "undefined";
@@ -230,7 +249,7 @@ export function createDemoOrder(products: HomeCarouselProduct[], items: DemoCart
     products,
     status: "processing",
     steamData,
-    totalRub: getProductsTotalRub(products, items),
+    totalLk: getProductsTotalLk(products, items),
   };
 
   saveOrder(order);
@@ -270,25 +289,29 @@ export function getProductPaymentAmountRub(product: HomeCarouselProduct) {
   return Math.max(1, Math.round(mainNumber));
 }
 
-export function getProductsTotalRub(products: HomeCarouselProduct[], items: DemoCartItem[]) {
-  return products.reduce((total, product) => {
-    const quantity = items.find((item) => item.productId === product.id)?.quantity ?? 1;
-    return total + getProductPaymentAmountRub(product) * quantity;
-  }, 0);
+export function getProductPaymentAmountLk(product: HomeCarouselProduct) {
+  return rubToLocker(getProductPaymentAmountRub(product));
 }
 
-export function formatRub(value: number) {
-  return new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 0,
-    style: "currency",
-    currency: "RUB",
-  }).format(value);
+export function formatProductPrice(product: HomeCarouselProduct) {
+  return formatLocker(getProductPaymentAmountLk(product));
+}
+
+export function formatProductRubApprox(product: HomeCarouselProduct) {
+  return formatApproxRubFromLocker(getProductPaymentAmountLk(product));
+}
+
+export function getProductsTotalLk(products: HomeCarouselProduct[], items: DemoCartItem[]) {
+  return products.reduce((total, product) => {
+    const quantity = items.find((item) => item.productId === product.id)?.quantity ?? 1;
+    return total + getProductPaymentAmountLk(product) * quantity;
+  }, 0);
 }
 
 export function getStatusLabel(status: DemoOrderStatus) {
   const labels: Record<DemoOrderStatus, string> = {
     created: "Создан",
-    sent: "Передан поставщику",
+    sent: "Передан на выполнение",
     processing: "В обработке",
     completed: "Выполнен",
     error: "Ошибка",
@@ -300,7 +323,7 @@ export function getStatusLabel(status: DemoOrderStatus) {
 export function getStatusFlow(status: DemoOrderStatus) {
   const flow = [
     ["created", "Заказ создан"],
-    ["sent", "Передан поставщику"],
+    ["sent", "Передан на выполнение"],
     ["processing", "В обработке"],
     ["completed", "Выполнен"],
     ["error", "Ошибка"],

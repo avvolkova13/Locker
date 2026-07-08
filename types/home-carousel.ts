@@ -13,17 +13,20 @@ export type HomeCarouselFilter = {
 
 export type HomeCarouselProduct = {
   accent: string;
+  availability: "instant" | "available" | "limited" | "preorder";
   badge?: string;
   category: HomeCarouselCategory;
   categoryLabel: string;
+  collection: string;
   description: string;
   id: string;
   imageAlt: string;
   imageUrl?: string;
   name: string;
   price: string;
-  source: string;
-  sourceUrl: string;
+  productType: string;
+  rarity: string;
   stat: string;
   visualCode: string;
+  wear: string;
 };

@@ -17,13 +17,19 @@ import {
   COMMERCE_CHANGE_EVENT,
   createDemoOrder,
   debitBalance,
-  DEFAULT_TOP_UP_AMOUNT,
-  formatRub,
+  DEFAULT_TOP_UP_AMOUNT_RUB,
+  formatLocker,
+  formatLockerConversion,
+  formatLockerExchangeRate,
+  formatProductPrice,
+  formatProductRubApprox,
+  formatRubPlain,
+  formatApproxRubFromLocker,
   getAuthSession,
   getBalance,
   getCartProducts,
   getOrders,
-  getProductsTotalRub,
+  getProductsTotalLk,
   getSafeReturnTo,
   getStatusFlow,
   getStatusLabel,
@@ -31,6 +37,7 @@ import {
   removeCartItem,
   saveSteamData,
   setCartItemQuantity,
+  rubToLocker,
   type DemoCartItem,
   type DemoOrder,
   type DemoPaymentMethod,
@@ -55,8 +62,8 @@ type CommerceSnapshot = {
 
 const STATUS_EXPLANATIONS = [
   ["Создан", "Заказ принят Locker."],
-  ["Передан поставщику", "Данные переданы для выдачи."],
-  ["В обработке", "Поставщик выполняет заказ."],
+  ["Передан на выполнение", "Данные переданы для выдачи."],
+  ["В обработке", "Locker выполняет заказ."],
   ["Выполнен", "Товар выдан или доступ открыт."],
   ["Ошибка", "Нужно проверить детали заказа."],
 ] as const;
@@ -179,10 +186,10 @@ function ProductMiniCard({
           <span>{product.visualCode}</span>
         )}
       </Link>
-      <div>
+      <div className={styles.itemContent}>
         <div className={styles.itemMeta}>
           <span className={styles.tag}>{product.categoryLabel}</span>
-          <span className={styles.tag}>{product.source}</span>
+          <span className={styles.tag}>{product.productType}</span>
           {quantity > 1 ? <span className={styles.tag}>x{quantity}</span> : null}
         </div>
         <h3>{product.name}</h3>
@@ -205,7 +212,8 @@ function ProductMiniCard({
         ) : null}
       </div>
       <div className={styles.itemPrice}>
-        <strong>{product.price}</strong>
+        <strong>{formatProductPrice(product)}</strong>
+        <em>{formatProductRubApprox(product)}</em>
         <span>{product.stat}</span>
       </div>
     </article>
@@ -219,6 +227,7 @@ function SummaryCard({
   showLabel = true,
   title = "Проверка перед оплатой",
   total,
+  totalHint,
 }: {
   action: ReactNode;
   notice?: string;
@@ -226,6 +235,7 @@ function SummaryCard({
   showLabel?: boolean;
   title?: string;
   total: string;
+  totalHint?: string;
 }) {
   return (
     <aside className={styles.summaryCard}>
@@ -241,7 +251,10 @@ function SummaryCard({
       </div>
       <div className={styles.totalRow}>
         <span>К оплате с баланса</span>
-        <strong>{total}</strong>
+        <div>
+          <strong>{total}</strong>
+          {totalHint ? <em>{totalHint}</em> : null}
+        </div>
       </div>
       <div className={styles.actionStack}>{action}</div>
       <p className={styles.notice}>{notice}</p>
@@ -267,7 +280,7 @@ function StatusRail({ balance, hasSteamData, needsSteam }: {
   needsSteam: boolean;
 }) {
   const statuses = [
-    ["Баланс", balance > 0 ? formatRub(balance) : "0 ₽", balance > 0 ? undefined : "warning"],
+    ["Баланс", balance > 0 ? formatLocker(balance) : "0 LK", balance > 0 ? undefined : "warning"],
     ["Steam", needsSteam ? (hasSteamData ? "Данные указаны" : "Нужны данные") : "Не требуется", needsSteam && !hasSteamData ? "warning" : "muted"],
   ] as const;
 
@@ -296,7 +309,7 @@ function getAuthHref(returnTo: string) {
 export function CartScreen() {
   const { balance, cartEntries, session } = useCommerceSnapshot();
   const products = getProducts(cartEntries);
-  const totalRub = getProductsTotalRub(products, cartEntries.map((entry) => entry.item));
+  const totalLk = getProductsTotalLk(products, cartEntries.map((entry) => entry.item));
   const checkoutHref = session ? APP_ROUTES.checkout : `${APP_ROUTES.auth}?returnTo=${APP_ROUTES.checkout}`;
 
   return (
@@ -309,7 +322,7 @@ export function CartScreen() {
         session ? (
           <div className={styles.ledgerCard}>
             <span className={styles.smallLabel}>Баланс</span>
-            <strong>{formatRub(balance)}</strong>
+            <strong>{formatLocker(balance)}</strong>
             <p>Сначала пополните баланс картой или через СБП. Покупки списываются с баланса Locker.</p>
             <Link className={styles.ledgerAction} href={`${APP_ROUTES.balance}?returnTo=${APP_ROUTES.cart}`}>
               Пополнить
@@ -363,7 +376,8 @@ export function CartScreen() {
             ]}
             showLabel={false}
             title="Итог"
-            total={formatRub(totalRub)}
+            total={formatLocker(totalLk)}
+            totalHint={formatApproxRubFromLocker(totalLk)}
           />
         </div>
       )}
@@ -375,13 +389,13 @@ export function CheckoutScreen() {
   const router = useRouter();
   const { balance, cartEntries, session, steamData } = useCommerceSnapshot();
   const products = getProducts(cartEntries);
-  const totalRub = getProductsTotalRub(products, cartEntries.map((entry) => entry.item));
+  const totalLk = getProductsTotalLk(products, cartEntries.map((entry) => entry.item));
   const needsSteam = cartNeedsSteam(products);
   const [steamValues, setSteamValues] = useState<DemoSteamData>(steamData ?? { steamId: "", tradeUrl: "" });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const hasSteamData = !needsSteam || Boolean((steamData?.steamId || steamValues.steamId).trim() && (steamData?.tradeUrl || steamValues.tradeUrl).trim());
-  const hasEnoughBalance = balance >= totalRub;
+  const hasEnoughBalance = balance >= totalLk;
 
   useEffect(() => {
     if (steamData) {
@@ -427,7 +441,7 @@ export function CheckoutScreen() {
     setIsLoading(true);
 
     window.setTimeout(() => {
-      const debited = debitBalance(totalRub);
+      const debited = debitBalance(totalLk);
 
       if (!debited) {
         setIsLoading(false);
@@ -448,6 +462,7 @@ export function CheckoutScreen() {
       backHref={APP_ROUTES.cart}
       backLabel="В корзину"
       eyebrow=""
+      shellClassName={styles.checkoutPageShell}
       side={
         session ? (
           <StatusRail balance={balance} hasSteamData={hasSteamData} needsSteam={needsSteam} />
@@ -468,7 +483,7 @@ export function CheckoutScreen() {
           title="Нет товаров для оформления"
         />
       ) : (
-        <div className={styles.grid}>
+        <div className={`${styles.grid} ${styles.checkoutGrid}`}>
           <section className={styles.panel} aria-label="Состав заказа">
             <div className={styles.panelHeader}>
               <div>
@@ -523,10 +538,13 @@ export function CheckoutScreen() {
               </button>
             }
             rows={[
-              ["Баланс", session ? formatRub(balance) : "После входа"],
+              ["Баланс", session ? formatLocker(balance) : "После входа"],
+              ["Ориентир баланса", session ? formatApproxRubFromLocker(balance) : "После входа"],
+              ["Курс", formatLockerExchangeRate()],
               ["Steam", needsSteam ? (hasSteamData ? "Данные есть" : "Нужны данные") : "Не требуется"],
             ]}
-            total={formatRub(totalRub)}
+            total={formatLocker(totalLk)}
+            totalHint={formatApproxRubFromLocker(totalLk)}
           />
         </div>
       )}
@@ -570,12 +588,13 @@ export function AuthScreen() {
 export function BalanceScreen() {
   const returnTo = useMemo(() => getSafeReturnTo(APP_ROUTES.catalog), []);
   const { balance, session } = useCommerceSnapshot();
-  const [amount, setAmount] = useState(DEFAULT_TOP_UP_AMOUNT);
+  const [amount, setAmount] = useState(DEFAULT_TOP_UP_AMOUNT_RUB);
   const [customAmount, setCustomAmount] = useState("");
   const [method, setMethod] = useState<DemoPaymentMethod>("card");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const selectedAmount = customAmount ? Number(customAmount) : amount;
+  const selectedAmountLk = rubToLocker(Number.isFinite(selectedAmount) ? selectedAmount : 0);
 
   function handleTopUp() {
     if (!Number.isFinite(selectedAmount) || selectedAmount < 100) {
@@ -587,10 +606,12 @@ export function BalanceScreen() {
     setIsLoading(true);
 
     window.setTimeout(() => {
-      addBalance(selectedAmount);
+      addBalance(selectedAmountLk);
       setIsLoading(false);
       setMessage({
-        text: method === "card" ? "Баланс пополнен картой." : "Баланс пополнен через СБП.",
+        text: method === "card"
+          ? `Баланс пополнен картой: ${formatLocker(selectedAmountLk)}.`
+          : `Баланс пополнен через СБП: ${formatLocker(selectedAmountLk)}.`,
         type: "success",
       });
     }, 850);
@@ -627,8 +648,9 @@ export function BalanceScreen() {
       shellClassName={styles.balancePageShell}
       side={
         <div className={styles.ledgerCard}>
-          <strong>{formatRub(balance)}</strong>
-          <p>Баланс используется для оплаты товаров внутри Locker.</p>
+          <span className={styles.smallLabel}>Баланс</span>
+          <strong>{formatLocker(balance)}</strong>
+          <p>Баланс используется для оплаты товаров внутри Locker. Сумма пополнения сразу переводится в локерсы.</p>
         </div>
       }
       text="Пополните баланс картой или через СБП, затем оплатите покупку с баланса Locker."
@@ -637,8 +659,12 @@ export function BalanceScreen() {
       <div className={styles.balanceFlow}>
         <section className={styles.formPanel} aria-labelledby="balance-title">
           <h2 id="balance-title">Выберите пополнение</h2>
+          <p className={styles.conversionRate}>
+            <span>Курс пополнения</span>
+            <strong>{formatLockerExchangeRate()}</strong>
+          </p>
           <div className={styles.amountGrid} aria-label="Варианты суммы">
-            {[500, 1000, 3000].map((value) => (
+            {[100, 500, 1000].map((value) => (
               <button
                 data-active={!customAmount && amount === value}
                 key={value}
@@ -648,11 +674,12 @@ export function BalanceScreen() {
                   setCustomAmount("");
                 }}
               >
-                {formatRub(value)}
+                {formatLockerConversion(value)}
               </button>
             ))}
           </div>
           <label className={styles.field}>
+            <span>Своя сумма в рублях</span>
             <input
               aria-label="Своя сумма пополнения"
               inputMode="numeric"
@@ -661,6 +688,9 @@ export function BalanceScreen() {
               onChange={(event) => setCustomAmount(event.target.value.replace(/\D/g, ""))}
             />
           </label>
+          <p className={styles.conversionPreview}>
+            К зачислению: {formatLocker(selectedAmountLk)}
+          </p>
           {message ? (
             <p className={message.type === "success" ? styles.successText : styles.fieldError} role="status">
               {message.text}
@@ -671,11 +701,11 @@ export function BalanceScreen() {
           <div className={styles.methodGrid}>
             <button className={styles.methodCard} data-active={method === "card"} type="button" onClick={() => setMethod("card")}>
               <strong>Банковская карта</strong>
-              <span>Оплата картой с зачислением на баланс Locker.</span>
+              <span>Оплата {formatRubPlain(selectedAmount)} картой с зачислением {formatLocker(selectedAmountLk)}.</span>
             </button>
             <button className={styles.methodCard} data-active={method === "sbp"} type="button" onClick={() => setMethod("sbp")}>
               <strong>СБП</strong>
-              <span>Перевод через СБП с проверкой суммы перед оплатой.</span>
+              <span>Перевод {formatRubPlain(selectedAmount)} через СБП с зачислением {formatLocker(selectedAmountLk)}.</span>
             </button>
           </div>
           </div>
@@ -745,7 +775,7 @@ export function ProfileScreen() {
       <div className={styles.profileGrid}>
         <section className={styles.profileCard}>
           <span className={styles.sectionLabel}>Баланс</span>
-          <h2>{formatRub(balance)}</h2>
+          <h2>{formatLocker(balance)}</h2>
           <p>Средства для оплаты покупок внутри Locker.</p>
           <Link className={styles.panelLink} href={APP_ROUTES.balance}>
             <strong>Пополнить</strong>
@@ -847,7 +877,9 @@ export function PurchaseHistoryScreen() {
                       ))}
                     </div>
                   </div>
-                  <strong className={styles.historyPrice}>{formatRub(order.totalRub)}</strong>
+                  <strong className={styles.historyPrice}>
+                    {formatLocker(order.totalLk ?? rubToLocker((order as DemoOrder & { totalRub?: number }).totalRub ?? 0))}
+                  </strong>
                 </article>
               ))}
             </div>

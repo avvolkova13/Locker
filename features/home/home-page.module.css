@@ -542,7 +542,7 @@
   border: 0;
   padding: 0;
   background: transparent;
-  cursor: inherit;
+  cursor: pointer;
   transform: var(--slot-transform);
   transform-style: preserve-3d;
   opacity: 1;
@@ -605,7 +605,7 @@
 .carouselSlot[data-offset="0"] {
   --slot-transform: var(--slot-active-transform);
   z-index: 7;
-  cursor: default;
+  cursor: pointer;
   filter: none;
   transform: translate3d(-50%, 18px, 150px) rotateZ(-4.5deg) rotateY(-1deg) rotateX(0deg) scale(1.02);
 }
@@ -649,7 +649,23 @@
   text-align: left;
   transition:
     border-radius 680ms cubic-bezier(0.22, 1, 0.36, 1),
-    clip-path 680ms cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow 260ms ease,
+    clip-path 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 260ms ease;
+}
+
+.carouselSlot:hover .carouselCard,
+.carouselSlot:focus-visible .carouselCard {
+  border-color: color-mix(in srgb, var(--product-accent), white 18%);
+  box-shadow:
+    0 58px 132px rgb(0 0 0 / 0.52),
+    0 0 92px color-mix(in srgb, var(--product-accent), transparent 74%);
+  transform: translateY(-6px) scale(1.012);
+}
+
+.carouselSlot[data-position="center"]:hover .carouselCard,
+.carouselSlot[data-position="center"]:focus-visible .carouselCard {
+  transform: translateY(-8px) scale(1.018);
 }
 
 .carouselStage:not([data-moving="true"]):not([data-dragging="true"]) .carouselCard {
@@ -695,6 +711,12 @@
     radial-gradient(circle at 34% 20%, color-mix(in srgb, var(--product-accent, #90f6d9), transparent 68%), transparent 30%);
   opacity: 0.68;
   pointer-events: none;
+  transition: opacity 260ms ease;
+}
+
+.carouselSlot:hover .carouselCard::before,
+.carouselSlot:focus-visible .carouselCard::before {
+  opacity: 0.9;
 }
 
 .carouselArtwork {
@@ -840,10 +862,8 @@
 }
 
 .carouselPurchase {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px 16px;
-  align-items: baseline;
+  display: grid;
+  gap: 5px;
   margin-top: 22px;
 }
 
@@ -859,6 +879,13 @@
   color: color-mix(in srgb, var(--product-accent, #90f6d9), white 24%);
   font-family: var(--font-mono);
   font-size: 0.8rem;
+}
+
+.carouselPurchase em {
+  color: rgb(244 247 241 / 0.52);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-style: normal;
 }
 
 .carouselControls {

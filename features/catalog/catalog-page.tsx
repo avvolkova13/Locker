@@ -2,13 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import type { CSSProperties } from "react";
+import type {
+  CSSProperties,
+  KeyboardEvent,
+  MouseEvent,
+} from "react";
 import { APP_ROUTES, getProductRoute } from "@/constants/routes";
 import {
   homeCarouselFilters,
@@ -18,18 +23,31 @@ import type {
   HomeCarouselCategory,
   HomeCarouselProduct,
 } from "@/types/home-carousel";
-import { addCartItem, COMMERCE_CHANGE_EVENT, getCartItems } from "@/utils/demo-commerce";
+import {
+  addCartItem,
+  COMMERCE_CHANGE_EVENT,
+  formatLockerExchangeRate,
+  formatProductPrice,
+  formatProductRubApprox,
+  getCartItems,
+  getProductPaymentAmountLk,
+} from "@/utils/demo-commerce";
+import {
+  getFloatValue,
+  productHasSouvenir,
+  productHasStatTrak,
+} from "@/utils/product-info";
 import styles from "./catalog-page.module.css";
 
 type CatalogCategory = HomeCarouselCategory | "all";
-type SortMode = "popular" | "price-asc" | "price-desc" | "name";
-type SourceFilter = "all" | string;
+type SortMode = "popular" | "new" | "price-asc" | "price-desc" | "float-asc";
+type CatalogFilter = "all" | string;
 
 type CatalogPageProps = {
   initialCategory?: CatalogCategory;
 };
 
-const CATALOG_PAGE_SIZE = 14;
+const CATALOG_PAGE_SIZE = 18;
 const CATALOG_LOAD_DELAY_MS = 280;
 const CART_TOAST_DURATION_MS = 2600;
 
@@ -88,39 +106,83 @@ const categoryLabels = [
   ...homeCarouselFilters,
 ] satisfies Array<{ label: string; value: CatalogCategory }>;
 
-function parsePrice(price: string) {
-  const numeric = price
-    .replace(/\s/g, "")
-    .replace(",", ".")
-    .match(/\d+(\.\d+)?/);
-
-  return numeric ? Number(numeric[0]) : 0;
-}
-
 function parseSales(stat: string) {
   const numeric = stat.replace(/\s/g, "").match(/\d+/);
 
   return numeric ? Number(numeric[0]) : 0;
 }
 
+function getUniqueOptions(selector: (product: HomeCarouselProduct) => string) {
+  return Array.from(new Set(homeCarouselProducts.map(selector).filter(Boolean))).sort((first, second) =>
+    first.localeCompare(second, "ru"),
+  );
+}
+
+function getAvailabilityLabel(value: HomeCarouselProduct["availability"]) {
+  const labels: Record<HomeCarouselProduct["availability"], string> = {
+    available: "В наличии",
+    instant: "Автовыдача",
+    limited: "Ограничено",
+    preorder: "Под заказ",
+  };
+
+  return labels[value];
+}
+
+function parseFilterNumber(value: string) {
+  const normalizedValue = value.replace(/\s/g, "").replace(",", ".");
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  const parsedValue = Number(normalizedValue);
+
+  return Number.isFinite(parsedValue) && parsedValue >= 0 ? parsedValue : null;
+}
+
+function toggleFilterValue(value: string, selectedValues: string[]) {
+  return selectedValues.includes(value)
+    ? selectedValues.filter((item) => item !== value)
+    : [...selectedValues, value];
+}
+
 export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
   const [activeCategory, setActiveCategory] = useState<CatalogCategory>(initialCategory);
   const [cartCount, setCartCount] = useState(0);
   const [query, setQuery] = useState("");
-  const [source, setSource] = useState<SourceFilter>("all");
+  const [availability, setAvailability] = useState<CatalogFilter>("all");
+  const [collection, setCollection] = useState<CatalogFilter>("all");
+  const [floatFrom, setFloatFrom] = useState("");
+  const [floatTo, setFloatTo] = useState("");
+  const [onlySouvenir, setOnlySouvenir] = useState(false);
+  const [onlyStatTrak, setOnlyStatTrak] = useState(false);
+  const [priceFrom, setPriceFrom] = useState("");
+  const [priceTo, setPriceTo] = useState("");
+  const [productType, setProductType] = useState<CatalogFilter>("all");
+  const [rarities, setRarities] = useState<string[]>([]);
   const [sortMode, setSortMode] = useState<SortMode>("popular");
-  const [onlyWithImage, setOnlyWithImage] = useState(false);
+  const [wears, setWears] = useState<string[]>([]);
   const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [cartToast, setCartToast] = useState<string | null>(null);
   const loadMoreTimeoutRef = useRef<number | null>(null);
   const cartToastTimeoutRef = useRef<number | null>(null);
+  const router = useRouter();
 
-  const sources = useMemo(
-    () => Array.from(new Set(homeCarouselProducts.map((product) => product.source))).sort(),
+  const availabilities = useMemo(
+    () => Array.from(new Set(homeCarouselProducts.map((product) => product.availability))),
     [],
   );
+  const collections = useMemo(() => getUniqueOptions((product) => product.collection), []);
+  const productTypes = useMemo(() => getUniqueOptions((product) => product.productType), []);
+  const rarityOptions = useMemo(() => getUniqueOptions((product) => product.rarity), []);
+  const wearOptions = useMemo(() => getUniqueOptions((product) => product.wear), []);
+  const priceFromValue = useMemo(() => parseFilterNumber(priceFrom), [priceFrom]);
+  const priceToValue = useMemo(() => parseFilterNumber(priceTo), [priceTo]);
+  const floatFromValue = useMemo(() => parseFilterNumber(floatFrom), [floatFrom]);
+  const floatToValue = useMemo(() => parseFilterNumber(floatTo), [floatTo]);
 
   useEffect(() => {
     function updateCartCount() {
@@ -142,8 +204,39 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
 
     return homeCarouselProducts
       .filter((product) => activeCategory === "all" || product.category === activeCategory)
-      .filter((product) => source === "all" || product.source === source)
-      .filter((product) => !onlyWithImage || Boolean(product.imageUrl))
+      .filter((product) => availability === "all" || product.availability === availability)
+      .filter((product) => collection === "all" || product.collection === collection)
+      .filter((product) => productType === "all" || product.productType === productType)
+      .filter((product) => rarities.length === 0 || rarities.includes(product.rarity))
+      .filter((product) => wears.length === 0 || wears.includes(product.wear))
+      .filter((product) => {
+        const price = getProductPaymentAmountLk(product);
+
+        if (priceFromValue !== null && price < priceFromValue) {
+          return false;
+        }
+
+        if (priceToValue !== null && price > priceToValue) {
+          return false;
+        }
+
+        return true;
+      })
+      .filter((product) => {
+        const floatValue = getFloatValue(product);
+
+        if (floatFromValue !== null && (floatValue === null || floatValue < floatFromValue)) {
+          return false;
+        }
+
+        if (floatToValue !== null && (floatValue === null || floatValue > floatToValue)) {
+          return false;
+        }
+
+        return true;
+      })
+      .filter((product) => !onlyStatTrak || productHasStatTrak(product))
+      .filter((product) => !onlySouvenir || productHasSouvenir(product))
       .filter((product) => {
         if (!normalizedQuery) {
           return true;
@@ -153,26 +246,47 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
           product.name,
           product.description,
           product.categoryLabel,
-          product.source,
+          product.collection,
+          product.productType,
+          product.rarity,
           product.stat,
         ].some((value) => value.toLowerCase().includes(normalizedQuery));
       })
       .sort((first, second) => {
         if (sortMode === "price-asc") {
-          return parsePrice(first.price) - parsePrice(second.price);
+          return getProductPaymentAmountLk(first) - getProductPaymentAmountLk(second);
         }
 
         if (sortMode === "price-desc") {
-          return parsePrice(second.price) - parsePrice(first.price);
+          return getProductPaymentAmountLk(second) - getProductPaymentAmountLk(first);
         }
 
-        if (sortMode === "name") {
-          return first.name.localeCompare(second.name, "ru");
+        if (sortMode === "new") {
+          return homeCarouselProducts.indexOf(second) - homeCarouselProducts.indexOf(first);
+        }
+
+        if (sortMode === "float-asc") {
+          return (getFloatValue(first) ?? Number.POSITIVE_INFINITY) - (getFloatValue(second) ?? Number.POSITIVE_INFINITY);
         }
 
         return parseSales(second.stat) - parseSales(first.stat);
       });
-  }, [activeCategory, onlyWithImage, query, sortMode, source]);
+  }, [
+    activeCategory,
+    availability,
+    collection,
+    floatFromValue,
+    floatToValue,
+    onlySouvenir,
+    onlyStatTrak,
+    priceFromValue,
+    priceToValue,
+    productType,
+    query,
+    rarities,
+    sortMode,
+    wears,
+  ]);
 
   const arrangedProducts = useMemo(
     () => placeImageProductsOnFeaturedTiles(filteredProducts),
@@ -187,7 +301,22 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
 
     setVisibleCount(CATALOG_PAGE_SIZE);
     setIsLoadingMore(false);
-  }, [activeCategory, onlyWithImage, query, sortMode, source]);
+  }, [
+    activeCategory,
+    availability,
+    collection,
+    floatFrom,
+    floatTo,
+    onlySouvenir,
+    onlyStatTrak,
+    priceFrom,
+    priceTo,
+    productType,
+    query,
+    rarities,
+    sortMode,
+    wears,
+  ]);
 
   useEffect(() => () => {
     if (loadMoreTimeoutRef.current) {
@@ -235,6 +364,44 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
     }, CART_TOAST_DURATION_MS);
   }
 
+  function openProduct(product: HomeCarouselProduct) {
+    router.push(getProductRoute(product.id));
+  }
+
+  function handleProductKeyDown(event: KeyboardEvent<HTMLElement>, product: HomeCarouselProduct) {
+    if (event.target instanceof Element && event.target.closest("button")) {
+      return;
+    }
+
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    openProduct(product);
+  }
+
+  function handleCartButtonClick(event: MouseEvent<HTMLButtonElement>, product: HomeCarouselProduct) {
+    event.stopPropagation();
+    handleAddToCart(product);
+  }
+
+  function resetFilters() {
+    setAvailability("all");
+    setCollection("all");
+    setFloatFrom("");
+    setFloatTo("");
+    setOnlySouvenir(false);
+    setOnlyStatTrak(false);
+    setPriceFrom("");
+    setPriceTo("");
+    setProductType("all");
+    setQuery("");
+    setRarities([]);
+    setSortMode("popular");
+    setWears([]);
+  }
+
   return (
     <main className={styles.page}>
       <section className={styles.hero} aria-labelledby="catalog-title">
@@ -243,6 +410,9 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
             <Link className={styles.backLink} href={APP_ROUTES.home}>
               ← На главную
             </Link>
+            <span className={styles.currencyContext} title="Локерсы — внутренняя валюта Locker">
+              Локерсы · {formatLockerExchangeRate()}
+            </span>
             <Link className={styles.cartQuickLink} href={APP_ROUTES.cart}>
               <span>Корзина</span>
               <strong>{cartCount}</strong>
@@ -268,136 +438,279 @@ export function CatalogPage({ initialCategory = "all" }: CatalogPageProps) {
           ))}
         </div>
 
-        <div className={styles.filterGrid}>
-          <label className={styles.field}>
-            <span>Поиск</span>
-            <input
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="AK-47, ChatGPT, Rust"
-              type="search"
-              value={query}
-            />
-          </label>
-
-          <label className={styles.field}>
-            <span>Источник</span>
-            <select onChange={(event) => setSource(event.target.value)} value={source}>
-              <option value="all">Все источники</option>
-              {sources.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className={styles.field}>
-            <span>Сортировка</span>
-            <select onChange={(event) => setSortMode(event.target.value as SortMode)} value={sortMode}>
-              <option value="popular">Сначала популярные</option>
-              <option value="price-asc">Сначала дешевле</option>
-              <option value="price-desc">Сначала дороже</option>
-              <option value="name">По названию</option>
-            </select>
-          </label>
-
-          <label className={styles.toggle}>
-            <input
-              checked={onlyWithImage}
-              onChange={(event) => setOnlyWithImage(event.target.checked)}
-              type="checkbox"
-            />
-            <span>Только с изображением товара</span>
-          </label>
+        <div className={styles.typeBar} aria-label="Типы предметов">
+          <button
+            data-active={productType === "all" || undefined}
+            onClick={() => setProductType("all")}
+            type="button"
+          >
+            Все типы
+          </button>
+          {productTypes.map((item) => (
+            <button
+              data-active={productType === item || undefined}
+              key={item}
+              onClick={() => setProductType(item)}
+              type="button"
+            >
+              {item}
+            </button>
+          ))}
         </div>
       </section>
 
       <section className={styles.results} aria-label="Товары">
-        <div className={styles.resultsHeader}>
-          <span>{filteredProducts.length} позиций</span>
-          <p>Откройте карточку, чтобы проверить цену, условия выдачи и данные, которые могут понадобиться.</p>
-        </div>
+        <div className={styles.catalogBody}>
+          <aside className={styles.filterPanel} aria-label="Расширенные фильтры">
+            <div className={styles.filterBlock}>
+              <div className={styles.filterTitle}>
+                <strong>Цена</strong>
+                <span>LK</span>
+              </div>
+              <div className={styles.rangeInputs}>
+                <input
+                  aria-label="Цена от"
+                  inputMode="numeric"
+                  onChange={(event) => setPriceFrom(event.target.value.replace(/[^\d\s]/g, ""))}
+                  placeholder="Цена от"
+                  value={priceFrom}
+                />
+                <input
+                  aria-label="Цена до"
+                  inputMode="numeric"
+                  onChange={(event) => setPriceTo(event.target.value.replace(/[^\d\s]/g, ""))}
+                  placeholder="Цена до"
+                  value={priceTo}
+                />
+              </div>
+            </div>
 
-        {filteredProducts.length > 0 ? (
-          <div className={styles.productGrid}>
-            {visibleProducts.map((product, index) => {
-              const tile = getCatalogTile(index, visibleProducts.length);
+            <div className={styles.filterBlock}>
+              <div className={styles.filterTitle}>
+                <strong>Тип доставки</strong>
+              </div>
+              <div className={styles.radioList}>
+                <label>
+                  <input checked={availability === "all"} name="delivery" onChange={() => setAvailability("all")} type="radio" />
+                  <span>Все</span>
+                </label>
+                {availabilities.map((item) => (
+                  <label key={item}>
+                    <input checked={availability === item} name="delivery" onChange={() => setAvailability(item)} type="radio" />
+                    <span>{getAvailabilityLabel(item)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
-              return (
-                <article
-                  className={styles.productCard}
-                  data-layout={tile.layout}
-                  data-size={tile.size}
-                  key={product.id}
-                  style={{ "--product-accent": product.accent } as CSSProperties}
-                >
-                  <Link className={styles.productVisual} href={getProductRoute(product.id)}>
-                    {product.imageUrl ? (
-                      <Image
-                        alt={product.imageAlt}
-                        fill
-                        sizes={
-                          tile.size === "featured"
-                            ? "(max-width: 700px) 94vw, (max-width: 1100px) 60vw, 48vw"
-                            : "(max-width: 700px) 94vw, (max-width: 1100px) 30vw, 24vw"
-                        }
-                        src={product.imageUrl}
-                      />
-                    ) : (
-                      <span>{product.visualCode}</span>
-                    )}
-                  </Link>
-                  <div className={styles.productInfo}>
-                    <div className={styles.productMeta}>
-                      <span>{product.categoryLabel}</span>
-                      <span>{product.source}</span>
-                    </div>
-                    <h2>
-                      <Link href={getProductRoute(product.id)}>{product.name}</Link>
-                    </h2>
-                    <p>{product.description}</p>
-                    <div className={styles.productBottom}>
-                      <div>
-                        <strong>{product.price}</strong>
-                        <span>{product.stat}</span>
+            <div className={styles.filterBlock}>
+              <div className={styles.filterTitle}>
+                <strong>Редкость</strong>
+              </div>
+              <div className={styles.checkList}>
+                {rarityOptions.map((item) => (
+                  <label key={item}>
+                    <input
+                      checked={rarities.includes(item)}
+                      onChange={() => setRarities((currentValue) => toggleFilterValue(item, currentValue))}
+                      type="checkbox"
+                    />
+                    <span>{item}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.filterBlock}>
+              <div className={styles.filterTitle}>
+                <strong>Износ</strong>
+              </div>
+              <div className={styles.checkList}>
+                {wearOptions.map((item) => (
+                  <label key={item}>
+                    <input
+                      checked={wears.includes(item)}
+                      onChange={() => setWears((currentValue) => toggleFilterValue(item, currentValue))}
+                      type="checkbox"
+                    />
+                    <span>{item}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className={styles.filterBlock}>
+              <div className={styles.filterTitle}>
+                <strong>Float</strong>
+              </div>
+              <div className={styles.rangeInputs}>
+                <input
+                  aria-label="Float от"
+                  inputMode="decimal"
+                  onChange={(event) => setFloatFrom(event.target.value.replace(/[^\d.,]/g, ""))}
+                  placeholder="от 0.00"
+                  value={floatFrom}
+                />
+                <input
+                  aria-label="Float до"
+                  inputMode="decimal"
+                  onChange={(event) => setFloatTo(event.target.value.replace(/[^\d.,]/g, ""))}
+                  placeholder="до 1.00"
+                  value={floatTo}
+                />
+              </div>
+            </div>
+
+            <label className={styles.field}>
+              <span>Коллекция</span>
+              <select onChange={(event) => setCollection(event.target.value)} value={collection}>
+                <option value="all">Все коллекции</option>
+                {collections.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className={styles.filterBlock}>
+              <div className={styles.filterTitle}>
+                <strong>Особенности</strong>
+              </div>
+              <div className={styles.checkList}>
+                <label>
+                  <input checked={onlyStatTrak} onChange={(event) => setOnlyStatTrak(event.target.checked)} type="checkbox" />
+                  <span>StatTrak</span>
+                </label>
+                <label>
+                  <input checked={onlySouvenir} onChange={(event) => setOnlySouvenir(event.target.checked)} type="checkbox" />
+                  <span>Souvenir</span>
+                </label>
+              </div>
+            </div>
+
+            <button className={styles.resetButton} onClick={resetFilters} type="button">
+              Сбросить фильтры
+            </button>
+          </aside>
+
+          <div className={styles.resultsColumn}>
+            <div className={styles.marketToolbar}>
+              <label className={styles.searchField}>
+                <span>Поиск</span>
+                <input
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="AK-47, Dragon Lore, Rust"
+                  type="search"
+                  value={query}
+                />
+              </label>
+
+              <label className={styles.sortField}>
+                <span>Сортировка</span>
+                <select onChange={(event) => setSortMode(event.target.value as SortMode)} value={sortMode}>
+                  <option value="popular">Популярные</option>
+                  <option value="new">Новинки</option>
+                  <option value="price-asc">Цена: по возрастанию</option>
+                  <option value="price-desc">Цена: по убыванию</option>
+                  <option value="float-asc">Float: минимальный</option>
+                </select>
+              </label>
+            </div>
+
+            <div className={styles.resultsHeader}>
+              <span>{filteredProducts.length} позиций</span>
+              <p>Откройте карточку, чтобы проверить цену в LK, наличие, float и параметры предмета.</p>
+            </div>
+
+            {filteredProducts.length > 0 ? (
+              <div className={styles.productGrid}>
+                {visibleProducts.map((product, index) => {
+                  const tile = getCatalogTile(index, visibleProducts.length);
+
+                  return (
+                    <article
+                      className={styles.productCard}
+                      data-layout={tile.layout}
+                      data-size={tile.size}
+                      key={product.id}
+                      role="link"
+                      style={{ "--product-accent": product.accent } as CSSProperties}
+                      tabIndex={0}
+                      onClick={() => openProduct(product)}
+                      onKeyDown={(event) => handleProductKeyDown(event, product)}
+                    >
+                      <Link className={styles.productVisual} href={getProductRoute(product.id)}>
+                        {product.imageUrl ? (
+                          <Image
+                            alt={product.imageAlt}
+                            fill
+                            sizes={
+                              tile.size === "featured"
+                                ? "(max-width: 700px) 94vw, (max-width: 1100px) 60vw, 48vw"
+                                : "(max-width: 700px) 94vw, (max-width: 1100px) 30vw, 24vw"
+                            }
+                            src={product.imageUrl}
+                          />
+                        ) : (
+                          <span>{product.visualCode}</span>
+                        )}
+                      </Link>
+                      <div className={styles.productInfo}>
+                        <div className={styles.productMeta}>
+                          <span>{product.categoryLabel}</span>
+                          <span>{product.productType}</span>
+                          <span>{getAvailabilityLabel(product.availability)}</span>
+                        </div>
+                        <h2>
+                          <Link href={getProductRoute(product.id)}>{product.name}</Link>
+                        </h2>
+                        <p>{product.description}</p>
+                        <div className={styles.productBottom}>
+                          <div>
+                            <strong>{formatProductPrice(product)}</strong>
+                            <em>{formatProductRubApprox(product)}</em>
+                            <span>{product.stat}</span>
+                          </div>
+                          <button
+                            aria-label={`Добавить в корзину: ${product.name}`}
+                            className={styles.productCartButton}
+                            type="button"
+                            onClick={(event) => handleCartButtonClick(event, product)}
+                          >
+                            {addedProductId === product.id ? "Добавлено" : "В корзину"}
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        aria-label={`Добавить в корзину: ${product.name}`}
-                        className={styles.productCartButton}
-                        type="button"
-                        onClick={() => handleAddToCart(product)}
-                      >
-                        {addedProductId === product.id ? "Добавлено" : "В корзину"}
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <div className={styles.emptyState}>
-            <h2>По этим параметрам ничего не найдено</h2>
-            <p>Измените категорию, источник или поисковый запрос.</p>
-          </div>
-        )}
-
-        {filteredProducts.length > 0 ? (
-          <div className={styles.paginationPanel}>
-            {hasMoreProducts ? (
-              <button
-                className={styles.loadMoreButton}
-                disabled={isLoadingMore}
-                onClick={handleLoadMore}
-                type="button"
-              >
-                {isLoadingMore ? "Загружаем товары…" : "Показать ещё"}
-              </button>
+                    </article>
+                  );
+                })}
+              </div>
             ) : (
-              <p className={styles.endState}>Показаны все товары</p>
+              <div className={styles.emptyState}>
+                <h2>По этим параметрам ничего не найдено</h2>
+                <p>Измените категорию, фильтры или поисковый запрос.</p>
+              </div>
             )}
+
+            {filteredProducts.length > 0 ? (
+              <div className={styles.paginationPanel}>
+                {hasMoreProducts ? (
+                  <button
+                    className={styles.loadMoreButton}
+                    disabled={isLoadingMore}
+                    onClick={handleLoadMore}
+                    type="button"
+                  >
+                    {isLoadingMore ? "Загружаем товары…" : "Показать ещё"}
+                  </button>
+                ) : (
+                  <p className={styles.endState}>Показаны все товары</p>
+                )}
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        </div>
       </section>
 
       {cartToast ? (

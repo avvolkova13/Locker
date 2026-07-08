@@ -45,7 +45,13 @@ export function ProductCartQuickLink({
   );
 }
 
-export function ProductActions({ productId }: { productId: string }) {
+export function ProductActions({
+  buttonLabel = "Добавить в корзину",
+  productId,
+}: {
+  buttonLabel?: string;
+  productId: string;
+}) {
   const [message, setMessage] = useState(false);
   const toastTimeoutRef = useRef<number | null>(null);
 
@@ -72,7 +78,7 @@ export function ProductActions({ productId }: { productId: string }) {
   return (
     <div className={styles.inlineActions}>
       <LockerButton type="button" onClick={handleAddToCart}>
-        Добавить в корзину
+        {buttonLabel}
       </LockerButton>
       {message ? (
         <div className={styles.cartToast} role="status">

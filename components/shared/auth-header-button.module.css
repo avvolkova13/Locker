@@ -4,6 +4,36 @@
   align-items: center;
 }
 
+.currencyPill,
+.balancePill {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgb(144 246 217 / 0.2);
+  border-radius: var(--control-radius);
+  padding: 7px 11px;
+  background: rgb(144 246 217 / 0.055);
+  color: rgb(242 245 239 / 0.68);
+  cursor: help;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.currencyPill strong,
+.balancePill strong {
+  color: #f2f5ef;
+  font: inherit;
+  font-weight: 600;
+}
+
+.currencyPill span,
+.balancePill span {
+  color: rgb(144 246 217 / 0.76);
+}
+
 .signOut {
   --button-bg: rgb(255 255 255 / 0.025);
   --button-surface: rgb(255 255 255 / 0.035);
@@ -14,6 +44,20 @@
 
 @media (max-width: 420px) {
   .actions {
-    gap: 16px;
+    gap: 8px;
+  }
+
+  .currencyPill span {
+    display: none;
+  }
+
+  .balancePill {
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 0.62rem;
+  }
+
+  .balancePill span {
+    display: none;
   }
 }

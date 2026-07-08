@@ -7,6 +7,18 @@ import { APP_ROUTES, getProductRoute } from "@/constants/routes";
 import { ProductActions, ProductCartQuickLink } from "@/features/account/product-actions";
 import { homeCarouselProducts } from "@/mock-data/home-carousel";
 import type { HomeCarouselProduct } from "@/types/home-carousel";
+import { formatLockerExchangeRate, formatProductPrice, formatProductRubApprox } from "@/utils/demo-commerce";
+import {
+  getAvailabilityText,
+  getFloatPosition,
+  getFloatValue,
+  getProductDescription,
+  getProductDisplayName,
+  getProductFamily,
+  getWearLabel,
+  getWearShort,
+  WEAR_MARKS,
+} from "@/utils/product-info";
 import styles from "./product-page.module.css";
 
 type ProductPageProps = {
@@ -46,39 +58,6 @@ function getServiceDetails(product: HomeCarouselProduct) {
   };
 }
 
-function getProductSpecs(product: HomeCarouselProduct) {
-  const commonSpecs = [
-    ["Категория", product.categoryLabel],
-    ["Источник данных", product.source],
-    ["Статус", product.stat],
-  ];
-
-  if (product.category === "steam-wallet") {
-    return [
-      ...commonSpecs,
-      ["Формат", "Пополнение или услуга Steam"],
-      ["Выдача", "После оплаты"],
-    ];
-  }
-
-  if (product.category === "chatgpt") {
-    return [
-      ...commonSpecs,
-      ["Формат", "Подписка или аккаунт"],
-      [
-        "Срок",
-        product.name.includes("30") || product.name.includes("месяц") ? "Около 30 дней" : "Указан в условиях",
-      ],
-    ];
-  }
-
-  return [
-    ...commonSpecs,
-    ["Игра", product.categoryLabel],
-    ["Получение", "Через Steam"],
-  ];
-}
-
 function getRelatedProducts(product: HomeCarouselProduct) {
   return homeCarouselProducts
     .filter((item) => item.category === product.category && item.id !== product.id)
@@ -116,8 +95,20 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   const details = getServiceDetails(product);
-  const specs = getProductSpecs(product);
   const relatedProducts = getRelatedProducts(product);
+  const productFamily = getProductFamily(product);
+  const productDisplayName = getProductDisplayName(product);
+  const wearShort = getWearShort(product);
+  const wearLabel = getWearLabel(product);
+  const floatValue = getFloatValue(product);
+  const floatPosition = getFloatPosition(product);
+  const productDescription = getProductDescription(product);
+  const summarySpecs = [
+    ["Состояние", wearLabel],
+    ["Износ", floatValue === null ? product.wear : floatValue.toFixed(6)],
+    ["Редкость", product.rarity],
+    ["Коллекция", product.collection],
+  ];
 
   return (
     <main className={styles.page} style={{ "--product-accent": product.accent } as CSSProperties}>
@@ -126,6 +117,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <Link className={styles.backLink} href={APP_ROUTES.catalog}>
             ← В каталог
           </Link>
+          <span className={styles.currencyContext} title="Локерсы — внутренняя валюта Locker">
+            Локерсы · {formatLockerExchangeRate()}
+          </span>
           <ProductCartQuickLink className={styles.cartQuickLink} badgeClassName={styles.cartQuickBadge} />
         </div>
 
@@ -157,42 +151,62 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
 
           <div className={styles.summary}>
-            <div className={styles.meta}>
-              <span>{product.categoryLabel}</span>
-              <span>{product.source}</span>
-              {product.badge ? <span>{product.badge}</span> : null}
+            <div>
+              <span className={styles.productFamily}>{productFamily}</span>
+              <h1 id="product-title">{productDisplayName}</h1>
+              <div className={styles.meta}>
+                <span>{product.categoryLabel}</span>
+                <span>{product.productType}</span>
+                {wearShort ? <span data-tone="wear">{wearShort}</span> : null}
+                <span data-tone="rarity">{product.rarity}</span>
+              </div>
             </div>
-
-            <h1 id="product-title">{product.name}</h1>
-            <p>{product.description}</p>
 
             <div className={styles.purchasePanel}>
-              <div>
+              <div className={styles.priceBox}>
                 <span className={styles.priceLabel}>Цена</span>
-                <strong>{product.price}</strong>
-                <span className={styles.stat}>{product.stat}</span>
+                <strong>{formatProductPrice(product)}</strong>
+                <em className={styles.priceApprox}>{formatProductRubApprox(product)}</em>
               </div>
-              <ProductActions productId={product.id} />
             </div>
 
-            <div className={styles.sourceNote}>
-              <span>Цена, изображение и описание проверяются по утверждённому источнику данных.</span>
-            </div>
-          </div>
-        </section>
+            <dl className={styles.summarySpecs}>
+              {summarySpecs.map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
 
-        <section className={styles.specs} aria-label="Параметры товара">
-          <div>
-            <span>Параметры</span>
+            <section className={styles.descriptionCard} aria-labelledby="description-title">
+              <h2 id="description-title">Описание</h2>
+              <p>{productDescription}</p>
+            </section>
+
+            {floatValue !== null && floatPosition !== null ? (
+              <section className={styles.wearPanel} aria-label="Шкала износа">
+                <div className={styles.wearHeader}>
+                  <span>Износ: {floatValue.toFixed(6)}</span>
+                  <strong>{wearLabel}</strong>
+                </div>
+                <div className={styles.wearTrack}>
+                  <span style={{ left: `${floatPosition}%` }} />
+                </div>
+                <div className={styles.wearMarks}>
+                  {WEAR_MARKS.map((mark) => (
+                    <span key={mark.label}>{mark.label}</span>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <div className={styles.ctaCluster}>
+              <ProductActions buttonLabel={`Купить — ${formatProductPrice(product)}`} productId={product.id} />
+            </div>
+
+            <p className={styles.stockLine}>{getAvailabilityText(product)}</p>
           </div>
-          <dl>
-            {specs.map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
         </section>
 
         <section className={styles.detailsGrid} aria-label="Информация об услуге">
@@ -249,7 +263,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   <span>{item.categoryLabel}</span>
                   <h3>{item.name}</h3>
                   <p>{item.description}</p>
-                  <strong>{item.price}</strong>
+                  <strong>{formatProductPrice(item)}</strong>
+                  <em>{formatProductRubApprox(item)}</em>
                 </Link>
               ))}
             </div>

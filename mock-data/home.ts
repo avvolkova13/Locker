@@ -25,17 +25,17 @@ export const heroCubeProducts = [
   {
     title: "Steam Wallet",
     category: "пополнение",
-    price: "от 500 ₽",
+    price: "от 850 LK",
     meta: "регион виден",
     status: "баланс",
     code: "SW",
-    mark: "₽",
+    mark: "LK",
     accent: "#90f6d9",
   },
   {
     title: "CS2 скины",
     category: "скины",
-    price: "от 240 ₽",
+    price: "от 408 LK",
     meta: "Steam нужен",
     status: "инвентарь",
     code: "C2",
@@ -45,7 +45,7 @@ export const heroCubeProducts = [
   {
     title: "Dota 2 скины",
     category: "скины",
-    price: "от 180 ₽",
+    price: "от 306 LK",
     meta: "игра указана",
     status: "предметы",
     code: "D2",
@@ -55,7 +55,7 @@ export const heroCubeProducts = [
   {
     title: "Rust скины",
     category: "скины",
-    price: "от 320 ₽",
+    price: "от 544 LK",
     meta: "условия видны",
     status: "Steam",
     code: "RS",
