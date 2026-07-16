@@ -37,7 +37,7 @@ function Hero() {
       <div className={styles.heroCopy}>
         <h1 id="home-title">Получайте больше</h1>
         <p className={styles.heroText}>
-          Пополняйте Steam, покупайте игровые скины и цифровые товары в одном аккаунте.
+          Покупайте игровые скины, цифровые подписки и товары с единым балансом Locker.
         </p>
         <div className={styles.heroActions}>
           <LockerButton className={styles.heroButton} href={APP_ROUTES.catalog}>
@@ -78,10 +78,10 @@ function SteamRequirements() {
     <section className={styles.steamRequirements} id="steam" aria-labelledby="steam-title">
       <HeroApeBackground variant="steam" />
       <div className={styles.steamPanel}>
-        <h2 id="steam-title">Steam понадобится только при покупке скинов</h2>
+        <h2 id="steam-title">Один вход в Steam — и все трейды под контролем</h2>
         <p>
-          Пополнение Steam Wallet и большинство цифровых товаров не требуют дополнительной настройки. Для игровых
-          предметов мы заранее подскажем, какие данные Steam понадобятся.
+          После авторизации скины, статусы обменов и история покупок будут привязаны к вашему профилю. Пароль и коды
+          Steam Guard мы не запрашиваем.
         </p>
       </div>
     </section>
@@ -112,7 +112,6 @@ function Footer() {
       <div className={styles.footerTop}>
         <div className={styles.footerBrand}>
           <p>Locker</p>
-          <span>Юридическая информация будет добавлена после подтверждения реквизитов.</span>
         </div>
         <div className={styles.footerLinks}>
           <div>
